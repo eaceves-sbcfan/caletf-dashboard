@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CA Agricultural Land Equity Task Force — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  html, body, #root { margin: 0; padding: 0; min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, createContext, useContext } = React;
+
+/* ═══════════════ LANGUAGE CONTEXT ═══════════════ */
+const LangContext = createContext("en");
+const useLang = () => useContext(LangContext);
+const t = (obj, lang) => (typeof obj === "string" ? obj : obj?.[lang] || obj?.en || "");
+
+/* ═══════════════ TRANSLATIONS ═══════════════ */
+const UI = {
+  heroTag: { en: "CALIFORNIA BUDGET ACT OF 2022 — AB 179", es: "LEY DE PRESUPUESTO DE CALIFORNIA DE 2022 — AB 179" },
+  heroTitle1: { en: "Agricultural Land Equity", es: "Equidad en Tierras" },
+  heroTitle2: { en: "Task Force Report", es: "Agrícolas — Informe" },
+  heroDesc: {
+    en: "Policy recommendations addressing centuries of dispossession and building an equitable future for California's agricultural lands.",
+    es: "Recomendaciones de políticas que abordan siglos de despojo y construyen un futuro equitativo para las tierras agrícolas de California."
+  },
+  stat1: { en: "Policy Recommendations", es: "Recomendaciones" },
+  stat2: { en: "Focus Areas", es: "Áreas de Enfoque" },
+  stat3: { en: "Task Force Members", es: "Miembros" },
+  stat4: { en: "Survey Respondents", es: "Encuestados" },
+  tabOverview: { en: "Overview", es: "Resumen" },
+  tabRecs: { en: "Recommendations", es: "Recomendaciones" },
+  tabData: { en: "Data & Disparities", es: "Datos y Disparidades" },
+  tabTimeline: { en: "History", es: "Historia" },
+  tabImpact: { en: "✦ Your Impact", es: "✦ Tu Impacto" },
+  overviewTitle: { en: "Defining Agricultural Land Equity", es: "Definición de Equidad en Tierras Agrícolas" },
+  overviewDesc: {
+    en: "Agricultural land equity exists when priority producers and Tribal land stewards have secure, affordable, and viable land access for stewarding and cultivating food, fiber, medicine, and cultural resources — without systemic barriers, disparities, or exploitation. The Task Force developed 26 recommendations across 6 focus areas through an extensive process of 12 public meetings, 33 subcommittee meetings, 20 engagement sessions, and 20 site visits.",
+    es: "La equidad en tierras agrícolas existe cuando los productores prioritarios y los administradores tribales de tierras tienen acceso seguro, asequible y viable a la tierra para cultivar alimentos, fibra, medicinas y recursos culturales — sin barreras sistémicas, disparidades o explotación. El Grupo de Trabajo desarrolló 26 recomendaciones en 6 áreas de enfoque mediante un extenso proceso de 12 reuniones públicas, 33 reuniones de subcomités, 20 sesiones de participación y 20 visitas en sitio."
+  },
+  recsBySection: { en: "Recommendations by Section", es: "Recomendaciones por Sección" },
+  sixAreas: { en: "Six Focus Areas", es: "Seis Áreas de Enfoque" },
+  all26: { en: "All 26 Recommendations", es: "Las 26 Recomendaciones" },
+  selectSection: {
+    en: "Select a section to explore its detailed recommendations, key statistics, and context.",
+    es: "Seleccione una sección para explorar sus recomendaciones detalladas, estadísticas clave y contexto."
+  },
+  totalRecs: { en: "Total Recs", es: "Total Recs" },
+  section: { en: "Section", es: "Sección" },
+  recommendation: { en: "recommendation", es: "recomendación" },
+  recommendations: { en: "recommendations", es: "recomendaciones" },
+  dataTitle: { en: "Data & Disparities", es: "Datos y Disparidades" },
+  dataDesc: {
+    en: "Stark racial and structural disparities define California's agricultural landscape.",
+    es: "Marcadas disparidades raciales y estructurales definen el panorama agrícola de California."
+  },
+  ownershipTitle: { en: "Farmland Ownership by Race (2022 USDA Census)", es: "Propiedad de Tierras Agrícolas por Raza (Censo USDA 2022)" },
+  ownershipDesc: {
+    en: "82% of California farmland is owned by White-identifying producers, while 61% of crop workers were born in Mexico.",
+    es: "El 82% de las tierras agrícolas de California son propiedad de productores que se identifican como blancos, mientras que el 61% de los trabajadores agrícolas nacieron en México."
+  },
+  consolidationTitle: { en: "Land Consolidation at a Glance", es: "Consolidación de Tierras de un Vistazo" },
+  smallOwners: { en: "Small Landowners (≤50 acres)", es: "Pequeños Propietarios (≤50 acres)" },
+  largeOwners: { en: "Large Landowners (top 4.6%)", es: "Grandes Propietarios (top 4.6%)" },
+  ofLandowners: { en: "of landowners", es: "de propietarios" },
+  ofCropland: { en: "of total cropland", es: "del total de tierras" },
+  historyTitle: { en: "Historical Context", es: "Contexto Histórico" },
+  historyDesc: {
+    en: "Centuries of deliberate exclusion created today's agricultural land inequities.",
+    es: "Siglos de exclusión deliberada crearon las inequidades actuales en tierras agrícolas."
+  },
+  commAffected: { en: "Communities Affected", es: "Comunidades Afectadas" },
+  impactTitle: { en: "How Would This Report Affect You?", es: "¿Cómo Te Afectaría Este Informe?" },
+  impactDesc: {
+    en: "Input your characteristics to see which of the 26 recommendations would directly affect your life, how, and which mechanisms would catalyze change for you.",
+    es: "Ingresa tus características para ver cuáles de las 26 recomendaciones afectarían directamente tu vida, cómo, y qué mecanismos catalizarían cambios para ti."
+  },
+  stepRole: { en: "Role", es: "Rol" },
+  stepIdentity: { en: "Identity", es: "Identidad" },
+  stepChallenges: { en: "Challenges", es: "Desafíos" },
+  stepLocation: { en: "Location", es: "Ubicación" },
+  roleTitle: { en: "What's your role?", es: "¿Cuál es tu rol?" },
+  roleSubtitle: { en: "Select all that apply — many people wear multiple hats.", es: "Selecciona todos los que apliquen — muchas personas cumplen múltiples roles." },
+  identityTitle: { en: "How do you identify?", es: "¿Cómo te identificas?" },
+  identitySubtitle: {
+    en: "This helps determine which historically-targeted programs would apply to you. Your data stays in this browser session only.",
+    es: "Esto ayuda a determinar qué programas históricamente dirigidos aplicarían para ti. Tus datos permanecen solo en esta sesión del navegador."
+  },
+  challengeTitle: { en: "What challenges do you face?", es: "¿Qué desafíos enfrentas?" },
+  challengeSubtitle: { en: "Select the barriers most relevant to your situation.", es: "Selecciona las barreras más relevantes para tu situación." },
+  locationTitle: { en: "Where are you located?", es: "¿Dónde te encuentras?" },
+  locationSubtitle: {
+    en: "Location determines which preservation and zoning tools activate.",
+    es: "La ubicación determina qué herramientas de preservación y zonificación se activan."
+  },
+  back: { en: "← Back", es: "← Atrás" },
+  continue: { en: "Continue →", es: "Continuar →" },
+  analyze: { en: "Analyze My Impact ✦", es: "Analizar Mi Impacto ✦" },
+  startOver: { en: "← Start over with new profile", es: "← Comenzar de nuevo con nuevo perfil" },
+  yourAssessment: { en: "Your Personalized Impact Assessment", es: "Tu Evaluación de Impacto Personalizada" },
+  recsAffect: { en: "recommendations directly affect you", es: "recomendaciones te afectan directamente" },
+  highImpact: { en: "High-impact recommendations", es: "Recomendaciones de alto impacto" },
+  mechActivated: { en: "Mechanisms activated for you", es: "Mecanismos activados para ti" },
+  sectionsRelevant: { en: "Report sections relevant to you", es: "Secciones del informe relevantes para ti" },
+  mostRelevant: { en: "Most relevant section for you", es: "Sección más relevante para ti" },
+  rankedTitle: { en: "Recommendations Ranked by Impact on You", es: "Recomendaciones Clasificadas por Impacto en Ti" },
+  rankedDesc: {
+    en: "Ordered by how many of your characteristics each recommendation addresses. Relevance bars show relative strength.",
+    es: "Ordenadas por cuántas de tus características aborda cada recomendación. Las barras de relevancia muestran la fuerza relativa."
+  },
+  relevance: { en: "Relevance", es: "Relevancia" },
+  whyMatters: { en: "Why this matters for you", es: "Por qué esto te importa" },
+  mechLabel: { en: "Mechanisms activated", es: "Mecanismos activados" },
+  highImpactLabel: { en: "High Impact", es: "Alto Impacto" },
+  medImpactLabel: { en: "Medium Impact", es: "Impacto Medio" },
+  relevantLabel: { en: "Relevant", es: "Relevante" },
+  fullMap: { en: "Your Full Mechanism Activation Map", es: "Tu Mapa Completo de Activación de Mecanismos" },
+  fullMapDesc: {
+    en: (n) => `All ${n} policy mechanisms that would be set in motion based on your profile — spanning grants, legal protections, zoning reforms, tax incentives, and institutional changes.`,
+    es: (n) => `Los ${n} mecanismos de política que se pondrían en marcha según tu perfil — abarcando subvenciones, protecciones legales, reformas de zonificación, incentivos fiscales y cambios institucionales.`
+  },
+  footer: {
+    en: "California Agricultural Land Equity Task Force Report Dashboard · Created from AB 179 (2022) · Recommendations due January 1, 2026",
+    es: "Panel del Informe del Grupo de Trabajo de Equidad en Tierras Agrícolas de California · Creado a partir de AB 179 (2022) · Recomendaciones entregadas el 1 de enero de 2026"
+  },
+  sec: { en: "Sec", es: "Sec" },
+  priorityProducers: { en: "priority producers and Tribal land stewards", es: "productores prioritarios y administradores tribales de tierras" },
+};
+
+/* ═══════════════ BILINGUAL DATA ═══════════════ */
+
+const SECTIONS = [
+  {
+    id: 1, icon: "🪶", color: "#8B4513", accent: "#D2691E", recCount: 4,
+    title: { en: "Tribal Stewardship & Land Return", es: "Administración Tribal y Devolución de Tierras" },
+    summary: {
+      en: "Restore ancestral lands to California Native American Tribes and enable Traditional Ecological Knowledge practices.",
+      es: "Restaurar las tierras ancestrales a las Tribus Nativo Americanas de California y habilitar prácticas de Conocimiento Ecológico Tradicional."
+    },
+    recs: [
+      { id: "1.1", title: { en: "Ancestral Land Return Fund", es: "Fondo de Devolución de Tierras Ancestrales" }, desc: { en: "Continuously funded program for Tribes to acquire land within ancestral territories, covering acquisition, infrastructure, legal aid, and fee-to-trust conversions.", es: "Programa de financiamiento continuo para que las Tribus adquieran tierras dentro de sus territorios ancestrales, cubriendo adquisición, infraestructura, asistencia legal y conversiones de propiedad a fideicomiso." }, mechanisms: { en: ["Direct grants for land purchase", "Infrastructure development funds", "Legal aid for fee-to-trust conversion", "Technical assistance programs"], es: ["Subvenciones directas para compra de tierras", "Fondos de desarrollo de infraestructura", "Asistencia legal para conversión a fideicomiso", "Programas de asistencia técnica"] } },
+      { id: "1.2", title: { en: "Embed Land Return in State Policies", es: "Integrar la Devolución de Tierras en Políticas Estatales" }, desc: { en: "Establish a Tribal Lands Equity Advisory Council, conduct government-to-government consultation, and remove legal barriers to land return.", es: "Establecer un Consejo Asesor de Equidad en Tierras Tribales, realizar consultas de gobierno a gobierno y eliminar barreras legales para la devolución de tierras." }, mechanisms: { en: ["Advisory council with policy authority", "Government-to-government consultation mandates", "Legal barrier removal"], es: ["Consejo asesor con autoridad política", "Mandatos de consulta gobierno a gobierno", "Eliminación de barreras legales"] } },
+      { id: "1.3", title: { en: "Return Publicly Held Land", es: "Devolver Tierras de Propiedad Pública" }, desc: { en: "Transfer state-owned lands to Tribes starting with treaty-promised lands. Adopt right of first refusal for surplus public land.", es: "Transferir tierras estatales a las Tribus comenzando con las tierras prometidas por tratados. Adoptar derecho de primera opción para tierras públicas excedentes." }, mechanisms: { en: ["State land transfers", "Right of first refusal on surplus land", "Surplus Land Act amendments"], es: ["Transferencias de tierras estatales", "Derecho de primera opción en tierras excedentes", "Enmiendas a la Ley de Tierras Excedentes"] } },
+      { id: "1.4", title: { en: "Enable Traditional Ecological Knowledge", es: "Habilitar el Conocimiento Ecológico Tradicional" }, desc: { en: "Remove barriers to cultural fire and TEK practices, develop model zoning ordinances, and create Cultural Conservation Zoning Overlays.", es: "Eliminar barreras para prácticas de quema cultural y CET, desarrollar ordenanzas modelo de zonificación y crear Zonas de Conservación Cultural." }, mechanisms: { en: ["Cultural fire practice authorization", "Zoning overlay protections", "Model ordinance templates"], es: ["Autorización de prácticas de quema cultural", "Protecciones de zonificación superpuesta", "Plantillas de ordenanzas modelo"] } },
+    ],
+    keyStats: [
+      { value: "< 1%", label: { en: "of CA held by federally recognized Tribes", es: "de CA en manos de Tribus reconocidas federalmente" } },
+      { value: "109", label: { en: "federally recognized Tribes", es: "Tribus reconocidas federalmente" } },
+      { value: "60+", label: { en: "non-federally recognized Tribes", es: "Tribus sin reconocimiento federal" } },
+      { value: "18", label: { en: "unratified treaties (8.5M acres promised)", es: "tratados no ratificados (8.5M acres prometidos)" } },
+    ]
+  },
+  {
+    id: 2, icon: "🌱", color: "#2D5016", accent: "#4A7C23", recCount: 7,
+    title: { en: "Fund & Incentivize Land Acquisition", es: "Financiar e Incentivar la Adquisición de Tierras" },
+    summary: {
+      en: "Create funding mechanisms and financial incentives to help priority producers and Tribal land stewards acquire agricultural land.",
+      es: "Crear mecanismos de financiamiento e incentivos financieros para ayudar a productores prioritarios y administradores tribales a adquirir tierras agrícolas."
+    },
+    recs: [
+      { id: "2.1", title: { en: "Restorative Land Fund", es: "Fondo Restaurativo de Tierras" }, desc: { en: "Grant program for land acquisition, startup costs, and legal assistance with set-asides for descendants of enslaved people.", es: "Programa de subvenciones para adquisición de tierras, costos iniciales y asistencia legal con reservas para descendientes de personas esclavizadas." }, mechanisms: { en: ["Direct acquisition grants", "Startup cost coverage", "Legal assistance funding", "Set-aside for descendants of enslaved people"], es: ["Subvenciones directas de adquisición", "Cobertura de costos iniciales", "Financiamiento de asistencia legal", "Reserva para descendientes de personas esclavizadas"] } },
+      { id: "2.2", title: { en: "Public Education Campaign", es: "Campaña de Educación Pública" }, desc: { en: "Fund research documenting historical harms modeled on the California Reparations Report.", es: "Financiar investigación que documente daños históricos basada en el Informe de Reparaciones de California." }, mechanisms: { en: ["State-funded historical research", "Educational materials distribution", "Public awareness campaigns"], es: ["Investigación histórica financiada por el estado", "Distribución de materiales educativos", "Campañas de concientización pública"] } },
+      { id: "2.3", title: { en: "Fund Intermediary Land Purchases", es: "Financiar Compras Intermediarias de Tierras" }, desc: { en: "Support land trusts and Tribes to buy land then lease or transfer to priority producers.", es: "Apoyar a fideicomisos de tierras y Tribus para comprar tierras y luego arrendar o transferir a productores prioritarios." }, mechanisms: { en: ["Land trust acquisition funding", "Lease-to-own pathways", "Intermediary organization support"], es: ["Financiamiento para adquisición por fideicomisos", "Vías de arrendamiento con opción a compra", "Apoyo a organizaciones intermediarias"] } },
+      { id: "2.4", title: { en: "Loan & Debt Forgiveness Programs", es: "Programas de Préstamos y Condonación de Deuda" }, desc: { en: "Low-interest loans, down payment assistance, and debt forgiveness tied to climate-smart practices.", es: "Préstamos de bajo interés, asistencia para enganche y condonación de deuda vinculada a prácticas climáticamente inteligentes." }, mechanisms: { en: ["Low-interest loan programs", "Down payment assistance", "Debt forgiveness for climate-smart farming", "Pilot lending programs"], es: ["Programas de préstamos de bajo interés", "Asistencia para enganche", "Condonación de deuda para agricultura climáticamente inteligente", "Programas piloto de préstamos"] } },
+      { id: "2.5", title: { en: "Tax Programs", es: "Programas Fiscales" }, desc: { en: "Revised tax law for land succession, Aggie Bond program, tax credits for producers and landowners who sell/lease to priority producers.", es: "Ley fiscal revisada para sucesión de tierras, programa Aggie Bond, créditos fiscales para productores y propietarios que vendan/arrienden a productores prioritarios." }, mechanisms: { en: ["Succession tax reform", "Aggie Bond revitalization", "Tax credits for priority producer transactions", "Tribal property tax exemption during fee-to-trust"], es: ["Reforma fiscal de sucesión", "Revitalización de Aggie Bond", "Créditos fiscales para transacciones con productores prioritarios", "Exención de impuesto predial tribal durante conversión a fideicomiso"] } },
+      { id: "2.6", title: { en: "Evaluate & Improve Existing Programs", es: "Evaluar y Mejorar Programas Existentes" }, desc: { en: "Expand grant portals, require 40% set-asides for priority producers, and standardize evaluation metrics.", es: "Expandir portales de subvenciones, requerir 40% de reservas para productores prioritarios y estandarizar métricas de evaluación." }, mechanisms: { en: ["40% set-aside requirements", "Expanded grant portals", "Standardized equity metrics", "CalEnviroScreen improvements"], es: ["Requisitos de reserva del 40%", "Portales de subvenciones expandidos", "Métricas de equidad estandarizadas", "Mejoras a CalEnviroScreen"] } },
+      { id: "2.7", title: { en: "Expand Technical Assistance", es: "Expandir Asistencia Técnica" }, desc: { en: "Fund multilingual, culturally appropriate services for land access, legal navigation, and cooperative formation.", es: "Financiar servicios multilingües y culturalmente apropiados para acceso a tierras, navegación legal y formación de cooperativas." }, mechanisms: { en: ["Multilingual technical services", "Land-linking programs", "Cooperative formation support", "Farmworker-to-owner transition programs"], es: ["Servicios técnicos multilingües", "Programas de vinculación de tierras", "Apoyo para formación de cooperativas", "Programas de transición de trabajador a propietario"] } },
+    ],
+    keyStats: [
+      { value: "85%", label: { en: "find land costs very/extremely challenging", es: "encuentran los costos de tierra muy/extremadamente difíciles" } },
+      { value: "$12K", label: { en: "avg price per acre (2022)", es: "precio promedio por acre (2022)" } },
+      { value: "40%", label: { en: "of ag land changing hands by 2035", es: "de tierras agrícolas cambiarán de dueño para 2035" } },
+      { value: "28.3%", label: { en: "real estate value increase since 2018", es: "aumento del valor inmobiliario desde 2018" } },
+    ]
+  },
+  {
+    id: 3, icon: "⚖️", color: "#1a1a2e", accent: "#4a4e69", recCount: 4,
+    title: { en: "Halt & Reverse Land Consolidation", es: "Detener y Revertir la Consolidación de Tierras" },
+    summary: {
+      en: "Target structural market forces and investment patterns driving inequality in agricultural land ownership.",
+      es: "Abordar las fuerzas estructurales del mercado y los patrones de inversión que impulsan la desigualdad en la propiedad de tierras agrícolas."
+    },
+    recs: [
+      { id: "3.1", title: { en: "Limit Investment Company Ownership", es: "Limitar la Propiedad de Empresas de Inversión" }, desc: { en: "Adopt a 'farmland for farmers' law restricting pension funds and investment companies. Impose ownership fees to fund acquisition programs.", es: "Adoptar una ley de 'tierras agrícolas para agricultores' que restrinja fondos de pensiones y empresas de inversión. Imponer cuotas de propiedad para financiar programas de adquisición." }, mechanisms: { en: ["Corporate ownership restrictions", "Ownership fee on investment companies", "AG antitrust enforcement", "Progressive property tax research"], es: ["Restricciones a la propiedad corporativa", "Cuota de propiedad a empresas de inversión", "Aplicación antimonopolio del Fiscal General", "Investigación de impuestos prediales progresivos"] } },
+      { id: "3.2", title: { en: "First Opportunity to Purchase Ordinances", es: "Ordenanzas de Primera Oportunidad de Compra" }, desc: { en: "Give priority producers and Tribes first chance to buy agricultural land. Prioritize Tribes for ancestral lands.", es: "Dar a productores prioritarios y Tribus la primera oportunidad de comprar tierras agrícolas. Priorizar a las Tribus para tierras ancestrales." }, mechanisms: { en: ["First right of purchase for priority producers", "Tribal priority for ancestral lands", "Civil Code 711 amendments"], es: ["Derecho de primera compra para productores prioritarios", "Prioridad tribal para tierras ancestrales", "Enmiendas al Código Civil 711"] } },
+      { id: "3.3", title: { en: "CA Producer Retirement Fund", es: "Fondo de Jubilación para Productores de CA" }, desc: { en: "Retirement fund so farmers don't sell to highest bidder. Funded by fees on investment companies, CalPERS, CalSTRS.", es: "Fondo de jubilación para que los agricultores no vendan al mejor postor. Financiado con cuotas de empresas de inversión, CalPERS, CalSTRS." }, mechanisms: { en: ["Retirement income for aging farmers", "Alternative to highest-bidder sales", "Investment company fee funding"], es: ["Ingresos de jubilación para agricultores mayores", "Alternativa a ventas al mejor postor", "Financiamiento por cuotas de empresas de inversión"] } },
+      { id: "3.4", title: { en: "Land Market Monitoring Program", es: "Programa de Monitoreo del Mercado de Tierras" }, desc: { en: "Public database tracking ownership, market trends, and land use at parcel level—modeled on the European Land Observatory.", es: "Base de datos pública que rastrea propiedad, tendencias del mercado y uso de suelo a nivel de parcela — basada en el Observatorio Europeo de Tierras." }, mechanisms: { en: ["Public ownership database", "Market trend transparency", "Parcel-level tracking", "Early warning system for consolidation"], es: ["Base de datos pública de propiedad", "Transparencia de tendencias del mercado", "Rastreo a nivel de parcela", "Sistema de alerta temprana para consolidación"] } },
+    ],
+    keyStats: [
+      { value: "73%", label: { en: "e.g. Fresno Co. — farmland held by top 10%", es: "ej. Condado de Fresno — tierras en manos del 10% superior" } },
+      { value: "4.6%", label: { en: "of landowners control 48.9% of cropland", es: "de propietarios controlan el 48.9% de tierras cultivables" } },
+      { value: "5.7×", label: { en: "more acres bought by LLCs vs individuals", es: "más acres comprados por LLCs vs individuos" } },
+      { value: "~7,400", label: { en: "farms lost 2017–2022", es: "granjas perdidas 2017–2022" } },
+    ]
+  },
+  {
+    id: 4, icon: "🏞️", color: "#006D77", accent: "#83C5BE", recCount: 4,
+    title: { en: "Preserve Land with Equitable Access", es: "Preservar Tierras con Acceso Equitativo" },
+    summary: {
+      en: "Land preservation must center who gets to steward the land, not just whether it remains agricultural.",
+      es: "La preservación de tierras debe centrarse en quién puede administrar la tierra, no solo en si permanece como agrícola."
+    },
+    recs: [
+      { id: "4.1", title: { en: "Statewide Preservation & Stewardship Plan", es: "Plan Estatal de Preservación y Administración" }, desc: { en: "Comprehensive equity-centered plan aligned with Nature-Based Solutions Climate Targets and 30x30 Initiative.", es: "Plan integral centrado en la equidad, alineado con las Metas Climáticas de Soluciones Basadas en la Naturaleza y la Iniciativa 30x30." }, mechanisms: { en: ["Equity-centered preservation metrics", "30x30 Initiative alignment", "Climate targets integration"], es: ["Métricas de preservación centradas en equidad", "Alineación con Iniciativa 30x30", "Integración de metas climáticas"] } },
+      { id: "4.2", title: { en: "Improve Conservation Programs & Tools", es: "Mejorar Programas y Herramientas de Conservación" }, desc: { en: "Fund easement enhancements, update guidelines for Tribal uses, leverage LandFlex for transitioning large-acreage land.", es: "Financiar mejoras de servidumbres, actualizar directrices para usos tribales, aprovechar LandFlex para transición de tierras de gran extensión." }, mechanisms: { en: ["Easement enhancements for affordable access", "Infrastructure and startup cost coverage", "Tribal use guideline updates", "LandFlex Program leveraging"], es: ["Mejoras de servidumbres para acceso asequible", "Cobertura de infraestructura y costos iniciales", "Actualización de directrices para usos tribales", "Aprovechamiento del Programa LandFlex"] } },
+      { id: "4.3", title: { en: "Local Preservation Strategies", es: "Estrategias Locales de Preservación" }, desc: { en: "Incentivize 1:1 preservation ratios, urban growth boundaries, and agriculture preservation overlays.", es: "Incentivar proporciones de preservación 1:1, límites de crecimiento urbano y zonas de preservación agrícola." }, mechanisms: { en: ["Development mitigation ratios (≥1:1)", "Urban growth boundaries", "Agriculture preservation overlays"], es: ["Proporciones de mitigación de desarrollo (≥1:1)", "Límites de crecimiento urbano", "Zonas de preservación agrícola"] } },
+      { id: "4.4", title: { en: "Expand Public Land Leasing", es: "Expandir el Arrendamiento de Tierras Públicas" }, desc: { en: "Fund intermediary CBOs, develop model lease templates, acquire at-risk Prime Farmland to preserve and lease.", es: "Financiar organizaciones comunitarias intermediarias, desarrollar plantillas modelo de arrendamiento, adquirir Tierras Agrícolas de Primera en riesgo para preservar y arrendar." }, mechanisms: { en: ["Model lease templates", "Agricultural land liaisons", "Low/no-cost public land leasing", "At-risk farmland acquisition"], es: ["Plantillas modelo de arrendamiento", "Enlaces de tierras agrícolas", "Arrendamiento público de bajo/sin costo", "Adquisición de tierras agrícolas en riesgo"] } },
+    ],
+    keyStats: [
+      { value: "1.6M", label: { en: "acres of farm/grazing land lost (1984–2018)", es: "acres de tierras agrícolas/pastoreo perdidos (1984–2018)" } },
+      { value: "~4%", label: { en: "of CA cropland is publicly owned", es: "de tierras cultivables de CA son de propiedad pública" } },
+      { value: "~50%", label: { en: "of public cropland lies fallow", es: "de tierras cultivables públicas están en barbecho" } },
+      { value: "800K", label: { en: "more acres at risk by 2040", es: "más acres en riesgo para 2040" } },
+    ]
+  },
+  {
+    id: 5, icon: "🔒", color: "#5C374C", accent: "#9A5B7A", recCount: 5,
+    title: { en: "Secure Land Tenure", es: "Asegurar la Tenencia de Tierras" },
+    summary: {
+      en: "Land access alone isn't enough—producers need stable, secure tenure, supportive regulations, and long-term viability.",
+      es: "El acceso a la tierra por sí solo no es suficiente — los productores necesitan tenencia estable y segura, regulaciones de apoyo y viabilidad a largo plazo."
+    },
+    recs: [
+      { id: "5.1", title: { en: "Agricultural Tenants' Bill of Rights", es: "Carta de Derechos de Arrendatarios Agrícolas" }, desc: { en: "Mandate fair leasing terms, mechanisms for tenant improvement value, extend max lease to 100 years, fund legal support.", es: "Mandatar términos justos de arrendamiento, mecanismos para el valor de mejoras del arrendatario, extender el arrendamiento máximo a 100 años, financiar apoyo legal." }, mechanisms: { en: ["Legally enforced fair lease terms", "Tenant improvement value retention", "Max lease extension (51→100 yrs)", "Property tax reassessment trigger removal", "Legal support and mediation funding"], es: ["Términos justos de arrendamiento legalmente aplicados", "Retención del valor de mejoras del arrendatario", "Extensión máxima de arrendamiento (51→100 años)", "Eliminación del gatillo de revaluación de impuesto predial", "Financiamiento de apoyo legal y mediación"] } },
+      { id: "5.2", title: { en: "Expand CDFA's Farmer Equity Office", es: "Expandir la Oficina de Equidad del Agricultor del CDFA" }, desc: { en: "Permanent funding, interagency regulatory coordination, regional satellite offices, tiered compliance for small farms.", es: "Financiamiento permanente, coordinación regulatoria interagencial, oficinas satélite regionales, cumplimiento escalonado para pequeñas granjas." }, mechanisms: { en: ["Permanent Farmer Equity Office funding", "Interagency regulatory coordination", "Tiered compliance for small/diversified farms", "Regional satellite offices"], es: ["Financiamiento permanente de la Oficina de Equidad", "Coordinación regulatoria interagencial", "Cumplimiento escalonado para granjas pequeñas/diversificadas", "Oficinas satélite regionales"] } },
+      { id: "5.3", title: { en: "Regional Ag Ombuds", es: "Defensores Agrícolas Regionales" }, desc: { en: "Permanent, non-regulatory guides helping producers navigate permitting and regulations via UC Cooperative Extension.", es: "Guías permanentes y no regulatorios que ayudan a productores a navegar permisos y regulaciones a través de la Extensión Cooperativa de la UC." }, mechanisms: { en: ["Non-regulatory navigation guides", "UC Cooperative Extension partnership", "Statewide coordinator for systemic issues"], es: ["Guías de navegación no regulatorios", "Asociación con Extensión Cooperativa de la UC", "Coordinador estatal para problemas sistémicos"] } },
+      { id: "5.4", title: { en: "Address Inequitable Policy Consequences", es: "Abordar Consecuencias Inequitativas de Políticas" }, desc: { en: "Targeted reforms for SGMA, Irrigated Lands, FSMA, labor regulations, and pest management—with tiered fees for small operators.", es: "Reformas dirigidas para SGMA, Tierras Irrigadas, FSMA, regulaciones laborales y manejo de plagas — con tarifas escalonadas para pequeños operadores." }, mechanisms: { en: ["SGMA: alternate allocation/fee structures", "Irrigated Lands: tiered fees and reporting", "FSMA: equitable inspection scheduling", "Labor: expanded free OSHA consultations", "Pest management: agroecological alternatives"], es: ["SGMA: estructuras alternativas de asignación/tarifas", "Tierras Irrigadas: tarifas y reportes escalonados", "FSMA: programación equitativa de inspecciones", "Laboral: consultas OSHA gratuitas expandidas", "Manejo de plagas: alternativas agroecológicas"] } },
+      { id: "5.5", title: { en: "Zoning & Land Use Planning", es: "Zonificación y Planificación del Uso de Suelo" }, desc: { en: "Model ordinances, allow retail/housing on ag land, 'agricultural track' in building codes, streamline farmworker housing.", es: "Ordenanzas modelo, permitir comercio/vivienda en tierras agrícolas, 'vía agrícola' en códigos de construcción, agilizar vivienda para trabajadores agrícolas." }, mechanisms: { en: ["Model zoning ordinances", "Retail/processing/housing on ag land", "Agricultural track in building codes", "Farmworker housing streamlining", "Diverse housing types allowed (tiny homes, RVs, mobile homes)"], es: ["Ordenanzas modelo de zonificación", "Comercio/procesamiento/vivienda en tierras agrícolas", "Vía agrícola en códigos de construcción", "Agilización de vivienda para trabajadores agrícolas", "Tipos diversos de vivienda permitidos (casas pequeñas, RVs, casas móviles)"] } },
+    ],
+    keyStats: [
+      { value: "51→100", label: { en: "proposed max lease length (years)", es: "duración máxima de arrendamiento propuesta (años)" } },
+      { value: "5", label: { en: "regulatory areas targeted for reform", es: "áreas regulatorias objetivo de reforma" } },
+      { value: "$620K+", label: { en: "e.g. unexpected costs faced by the Ohlone Tribe", es: "ej. costos inesperados enfrentados por la Tribu Ohlone" } },
+      { value: "35yr", label: { en: "lease length triggering tax reassessment", es: "duración de arrendamiento que activa revaluación fiscal" } },
+    ]
+  },
+  {
+    id: 6, icon: "🏙️", color: "#B5651D", accent: "#E8A952", recCount: 2,
+    title: { en: "Support Urban Agriculture", es: "Apoyar la Agricultura Urbana" },
+    summary: {
+      en: "Enable priority producers to farm near markets and communities while expanding food access and green space.",
+      es: "Permitir que los productores prioritarios cultiven cerca de mercados y comunidades mientras se expande el acceso a alimentos y espacios verdes."
+    },
+    recs: [
+      { id: "6.1", title: { en: "Ensure Eligibility & Tailored Funding", es: "Asegurar Elegibilidad y Financiamiento Adaptado" }, desc: { en: "Recognize urban producers in ag agencies. Continuous CDFA Urban Ag Grant funding. Water cost reduction, meter installation, revised eligibility criteria.", es: "Reconocer a productores urbanos en agencias agrícolas. Financiamiento continuo de Subvenciones de Agricultura Urbana del CDFA. Reducción de costos de agua, instalación de medidores, criterios de elegibilidad revisados." }, mechanisms: { en: ["Formal urban producer recognition", "Continuous Urban Ag Grant funding", "Water cost reduction programs", "Revised eligibility (remove scale/acreage requirements)", "Urban agriculture incentive zone bonus points"], es: ["Reconocimiento formal de productores urbanos", "Financiamiento continuo de Subvenciones de Ag Urbana", "Programas de reducción de costos de agua", "Elegibilidad revisada (eliminar requisitos de escala/superficie)", "Puntos de bonificación por zonas de incentivo de agricultura urbana"] } },
+      { id: "6.2", title: { en: "Make Land Available & Address Tenure", es: "Hacer Disponible la Tierra y Abordar la Tenencia" }, desc: { en: "Amend Surplus Land Act for urban agriculture, compile best-practice zoning, remove barriers to on-site composting.", es: "Enmendar la Ley de Tierras Excedentes para agricultura urbana, compilar mejores prácticas de zonificación, eliminar barreras para compostaje en sitio." }, mechanisms: { en: ["Surplus Land Act amendments for urban ag", "Best-practice zoning compilation", "Public land access agreements", "On-site composting barrier removal", "Technical assistance funding"], es: ["Enmiendas a Ley de Tierras Excedentes para ag urbana", "Compilación de mejores prácticas de zonificación", "Acuerdos de acceso a tierras públicas", "Eliminación de barreras para compostaje en sitio", "Financiamiento de asistencia técnica"] } },
+    ],
+    keyStats: [
+      { value: "$68M", label: { en: "in grant requests received", es: "en solicitudes de subvenciones recibidas" } },
+      { value: "$11.7M", label: { en: "actually awarded (2023)", es: "realmente otorgados (2023)" } },
+      { value: "$20M", label: { en: "from Prop 4 for urban farms", es: "de la Prop 4 para granjas urbanas" } },
+      { value: "5.8×", label: { en: "demand exceeds available funding", es: "la demanda excede el financiamiento disponible" } },
+    ]
+  },
+];
+
+const OWNERSHIP_DATA = [
+  { group: { en: "White", es: "Blanco" }, pct: 82, color: "#c9b99a" },
+  { group: { en: "Hispanic", es: "Hispano" }, pct: 9.69, color: "#8B6914" },
+  { group: { en: "Asian", es: "Asiático" }, pct: 3.93, color: "#6B8E23" },
+  { group: { en: "American Indian / Alaska Native", es: "Indígena Americano / Nativo de Alaska" }, pct: 3.08, color: "#8B4513" },
+  { group: { en: "Native Hawaiian / Pacific Islander", es: "Nativo Hawaiano / Isleño del Pacífico" }, pct: 0.95, color: "#006D77" },
+  { group: { en: "Black / African American", es: "Negro / Afroamericano" }, pct: 0.30, color: "#5C374C" },
+];
+
+const DATA_STATS = [
+  { value: "1.6M", label: { en: "Acres of farm and grazing land lost (1984–2018)", es: "Acres de tierras agrícolas y de pastoreo perdidos (1984–2018)" }, color: "#B5651D" },
+  { value: "63,134", label: { en: "Total farms in CA (2022), down from 70,521 in 2017", es: "Total de granjas en CA (2022), bajó de 70,521 en 2017" }, color: "#2D5016" },
+  { value: "98%", label: { en: "Reduction in Black farmers nationally (1920–2017)", es: "Reducción de agricultores negros a nivel nacional (1920–2017)" }, color: "#5C374C" },
+  { value: "$12K", label: { en: "Average price per acre of CA farm real estate (2022)", es: "Precio promedio por acre de bienes raíces agrícolas de CA (2022)" }, color: "#006D77" },
+  { value: "25%", label: { en: "Of national farmland sales by institutional investors post-2008", es: "De ventas nacionales de tierras agrícolas por inversionistas institucionales post-2008" }, color: "#1a1a2e" },
+  { value: "82%", label: { en: "Of CA farmland owned by White-identifying producers", es: "De tierras agrícolas de CA propiedad de productores que se identifican como blancos" }, color: "#8B4513" },
+];
+
+const TIMELINE = [
+  { year: "1848", text: { en: "Treaty of Guadalupe Hidalgo — land rights promised to Mexican nationals, many later dispossessed", es: "Tratado de Guadalupe Hidalgo — derechos de tierra prometidos a nacionales mexicanos, muchos luego despojados" } },
+  { year: "1882", text: { en: "Chinese Exclusion Act bars Asian immigrants from buying/leasing agricultural land", es: "Ley de Exclusión China prohíbe a inmigrantes asiáticos comprar/arrendar tierras agrícolas" } },
+  { year: "1913", text: { en: "California Alien Land Laws prevent Asian immigrants from owning farmland", es: "Leyes de Tierras para Extranjeros de California impiden a inmigrantes asiáticos poseer tierras agrícolas" } },
+  { year: "1924", text: { en: "CA Native Americans finally granted U.S. citizenship", es: "Nativos americanos de CA finalmente reciben ciudadanía estadounidense" } },
+  { year: "1942", text: { en: "EO 9066 forces removal of 122,000+ Japanese Americans — many lose property permanently", es: "Orden Ejecutiva 9066 fuerza la remoción de 122,000+ japoneses-americanos — muchos pierden propiedades permanentemente" } },
+  { year: "1920–2017", text: { en: "98% reduction in Black farmers nationally due to discrimination and consolidation", es: "98% de reducción en agricultores negros a nivel nacional debido a discriminación y consolidación" } },
+  { year: "2022", text: { en: "AB 179 creates the Agricultural Land Equity Task Force", es: "AB 179 crea el Grupo de Trabajo de Equidad en Tierras Agrícolas" } },
+  { year: "2025", text: { en: "Task Force delivers 26 recommendations to the Legislature", es: "El Grupo de Trabajo entrega 26 recomendaciones a la Legislatura" } },
+];
+
+const COMMUNITIES = [
+  { group: { en: "California Native Americans", es: "Nativos Americanos de California" }, impact: { en: "Violent removal, genocide, unratified treaties, forced labor, Rancheria terminations — now hold less than 1% of state land.", es: "Remoción violenta, genocidio, tratados no ratificados, trabajo forzado, terminaciones de Rancherías — ahora poseen menos del 1% de las tierras estatales." } },
+  { group: { en: "Black Americans", es: "Afroamericanos" }, impact: { en: "Forced labor, racial terror, sundown laws, denial of infrastructure — 98% reduction in Black farmers nationally.", es: "Trabajo forzado, terror racial, leyes de exclusión, negación de infraestructura — 98% de reducción de agricultores negros a nivel nacional." } },
+  { group: { en: "Asian & Asian American", es: "Asiáticos y Asiático-Americanos" }, impact: { en: "Chinese Exclusion Act, Alien Land Laws, Japanese American incarceration — permanent property loss.", es: "Ley de Exclusión China, Leyes de Tierras para Extranjeros, encarcelamiento de japoneses-americanos — pérdida permanente de propiedades." } },
+  { group: { en: "Mexican & Latino Workers", es: "Trabajadores Mexicanos y Latinos" }, impact: { en: "Broken Treaty of Guadalupe Hidalgo promises, Bracero Program exploitation, ongoing wage theft and pesticide exposure.", es: "Promesas rotas del Tratado de Guadalupe Hidalgo, explotación del Programa Bracero, robo de salarios continuo y exposición a pesticidas." } },
+  { group: { en: "Women Farmers", es: "Mujeres Agricultoras" }, impact: { en: "Exclusion from networks, difficulty accessing credit, bias toward male heirs, compounded for women of color.", es: "Exclusión de redes, dificultad para acceder a crédito, sesgo hacia herederos masculinos, agravado para mujeres de color." } },
+  { group: { en: "Farmworkers", es: "Trabajadores Agrícolas" }, impact: { en: "Wage theft, food insecurity, inhumane living conditions, reproductive health impacts, field violence.", es: "Robo de salarios, inseguridad alimentaria, condiciones de vida inhumanas, impactos en salud reproductiva, violencia en el campo." } },
+];
+
+const PROFILE_OPTIONS = {
+  role: [
+    { id: "tribal_member", label: { en: "Tribal Member / Indigenous Land Steward", es: "Miembro Tribal / Administrador Indígena de Tierras" }, icon: "🪶" },
+    { id: "current_farmer", label: { en: "Current Small-Scale Farmer (≤180 acres)", es: "Agricultor Actual de Pequeña Escala (≤180 acres)" }, icon: "🌾" },
+    { id: "large_farmer", label: { en: "Current Mid/Large-Scale Farmer (>180 acres)", es: "Agricultor Actual de Mediana/Gran Escala (>180 acres)" }, icon: "🚜" },
+    { id: "farmworker", label: { en: "Farmworker", es: "Trabajador Agrícola" }, icon: "👷" },
+    { id: "aspiring_farmer", label: { en: "Aspiring Farmer / Seeking Land", es: "Aspirante a Agricultor / Buscando Tierra" }, icon: "🌱" },
+    { id: "urban_grower", label: { en: "Urban Grower / Community Farmer", es: "Cultivador Urbano / Agricultor Comunitario" }, icon: "🏙️" },
+    { id: "tenant_farmer", label: { en: "Tenant / Lease-Based Farmer", es: "Arrendatario / Agricultor por Arrendamiento" }, icon: "📋" },
+    { id: "retiring_farmer", label: { en: "Aging / Retiring Farmer", es: "Agricultor Mayor / En Jubilación" }, icon: "🌅" },
+    { id: "landowner_nonfarm", label: { en: "Non-Farming Landowner", es: "Propietario de Tierra No Agricultor" }, icon: "🏡" },
+    { id: "advocate", label: { en: "Policy Advocate / Nonprofit Worker", es: "Promotor de Políticas / Trabajador de ONG" }, icon: "📢" },
+  ],
+  identity: [
+    { id: "indigenous", label: { en: "Native American / Indigenous", es: "Nativo Americano / Indígena" } },
+    { id: "black", label: { en: "Black / African American", es: "Negro / Afroamericano" } },
+    { id: "latino", label: { en: "Latino/a / Hispanic", es: "Latino/a / Hispano" } },
+    { id: "asian", label: { en: "Asian / Asian American", es: "Asiático / Asiático-Americano" } },
+    { id: "nhpi", label: { en: "Native Hawaiian / Pacific Islander", es: "Nativo Hawaiano / Isleño del Pacífico" } },
+    { id: "white", label: { en: "White", es: "Blanco" } },
+    { id: "multiracial", label: { en: "Multiracial / Other", es: "Multirracial / Otro" } },
+    { id: "prefer_not", label: { en: "Prefer not to say", es: "Prefiero no decir" } },
+  ],
+  challenges: [
+    { id: "cant_afford", label: { en: "Can't afford to buy land", es: "No puedo pagar para comprar tierra" }, icon: "💰" },
+    { id: "insecure_lease", label: { en: "Insecure or short-term lease", es: "Arrendamiento inseguro o a corto plazo" }, icon: "📄" },
+    { id: "regulatory_burden", label: { en: "Overwhelmed by regulations / permitting", es: "Abrumado por regulaciones / permisos" }, icon: "📑" },
+    { id: "water_access", label: { en: "Water access or cost issues", es: "Problemas de acceso o costo del agua" }, icon: "💧" },
+    { id: "no_housing", label: { en: "No housing on or near farm", es: "Sin vivienda en o cerca de la granja" }, icon: "🏠" },
+    { id: "credit_denied", label: { en: "Difficulty accessing credit or loans", es: "Dificultad para acceder a crédito o préstamos" }, icon: "🏦" },
+    { id: "language_barrier", label: { en: "Language barriers to services", es: "Barreras lingüísticas para acceder a servicios" }, icon: "🗣️" },
+    { id: "consolidation_pressure", label: { en: "Competing with large buyers / investors", es: "Compitiendo con grandes compradores / inversionistas" }, icon: "🏢" },
+    { id: "succession", label: { en: "No clear succession / transition plan", es: "Sin plan claro de sucesión / transición" }, icon: "🔄" },
+    { id: "zoning", label: { en: "Zoning prevents farming activities", es: "La zonificación impide actividades agrícolas" }, icon: "🚫" },
+    { id: "cultural_practices", label: { en: "Barriers to cultural / traditional practices", es: "Barreras para prácticas culturales / tradicionales" }, icon: "🪹" },
+    { id: "urban_exclusion", label: { en: "Excluded from ag programs as urban grower", es: "Excluido de programas agrícolas como cultivador urbano" }, icon: "🌆" },
+  ],
+  location: [
+    { id: "rural", label: { en: "Rural agricultural area", es: "Área agrícola rural" } },
+    { id: "periurban", label: { en: "Peri-urban / edge of city", es: "Periurbano / borde de la ciudad" } },
+    { id: "urban", label: { en: "Urban area", es: "Área urbana" } },
+    { id: "tribal_land", label: { en: "Tribal trust or reservation land", es: "Tierra tribal en fideicomiso o reservación" } },
+  ],
+};
+
+/* bilingual reasons for impact matching */
+const R = {
+  tribalDirect: { en: "Directly targets Tribal land return and sovereignty", es: "Apunta directamente a la devolución de tierras tribales y soberanía" },
+  tribalFunding: { en: "Provides Tribal-priority funding or purchase rights", es: "Proporciona financiamiento con prioridad tribal o derechos de compra" },
+  tribalGuidelines: { en: "Updates guidelines to support Tribal land uses", es: "Actualiza directrices para apoyar usos tribales de tierras" },
+  antiConsolidation: { en: "Protects you against investor-driven consolidation", es: "Te protege contra la consolidación impulsada por inversionistas" },
+  tenureSecurity: { en: "Strengthens your regulatory standing and tenure security", es: "Fortalece tu posición regulatoria y seguridad de tenencia" },
+  preservesLand: { en: "Preserves agricultural land around your operation", es: "Preserva tierras agrícolas alrededor de tu operación" },
+  tieredCompliance: { en: "Tiered compliance reduces burden on small-scale operations", es: "El cumplimiento escalonado reduce la carga en operaciones de pequeña escala" },
+  setAsides: { en: "40% set-asides in grant programs benefit small producers", es: "Las reservas del 40% en programas de subvenciones benefician a pequeños productores" },
+  farmworkerTransition: { en: "Creates farmworker-to-owner transition pathways", es: "Crea vías de transición de trabajador agrícola a propietario" },
+  farmworkerHousing: { en: "Streamlines farmworker housing on agricultural land", es: "Agiliza la vivienda para trabajadores agrícolas en tierras agrícolas" },
+  oshaTraining: { en: "Expands free OSHA consultations and multilingual training", es: "Expande consultas OSHA gratuitas y capacitación multilingüe" },
+  grantsLoans: { en: "Provides grants and loans for land acquisition", es: "Proporciona subvenciones y préstamos para adquisición de tierras" },
+  laborExploitation: { en: "Documents historical labor exploitation to justify reparative policy", es: "Documenta la explotación laboral histórica para justificar políticas reparativas" },
+  directFunding: { en: "Direct funding pathway to acquire your first land", es: "Vía de financiamiento directo para adquirir tu primera tierra" },
+  techAssist: { en: "Technical assistance for navigating land access and legal systems", es: "Asistencia técnica para navegar el acceso a tierras y sistemas legales" },
+  firstPurchase: { en: "First opportunity to purchase before investors", es: "Primera oportunidad de compra antes que los inversionistas" },
+  publicLeasing: { en: "Low/no-cost public land leasing as an entry point", es: "Arrendamiento público de bajo/sin costo como punto de entrada" },
+  taxCredits: { en: "Tax credits incentivize landowners to sell/lease to you", es: "Los créditos fiscales incentivan a propietarios a venderte/arrendarte" },
+  urbanDirect: { en: "Directly designed for urban agriculture producers", es: "Diseñado directamente para productores de agricultura urbana" },
+  urbanEligibility: { en: "Revised eligibility removes scale/acreage barriers", es: "La elegibilidad revisada elimina barreras de escala/superficie" },
+  urbanZoning: { en: "Zoning reforms can enable urban farm operations", es: "Las reformas de zonificación pueden habilitar operaciones agrícolas urbanas" },
+  billOfRights: { en: "Agricultural Tenants' Bill of Rights directly protects your lease rights", es: "La Carta de Derechos de Arrendatarios Agrícolas protege directamente tus derechos de arrendamiento" },
+  ombudsEquity: { en: "Ombuds and Equity Office help navigate landlord-tenant issues", es: "Defensores y Oficina de Equidad ayudan a navegar problemas arrendador-arrendatario" },
+  modelLeases: { en: "Model lease templates and liaisons for fair public land leasing", es: "Plantillas modelo de arrendamiento y enlaces para arrendamiento justo de tierras públicas" },
+  leaseToOwn: { en: "Intermediary land trusts can offer stable lease-to-own paths", es: "Los fideicomisos intermediarios pueden ofrecer vías estables de arrendamiento con opción a compra" },
+  retirementFund: { en: "Retirement fund means you don't have to sell to the highest bidder", es: "El fondo de jubilación significa que no tienes que vender al mejor postor" },
+  successionTax: { en: "Succession tax reform protects intergenerational transfer", es: "La reforma fiscal de sucesión protege la transferencia intergeneracional" },
+  priorityTransfer: { en: "Ensures your land can transfer to priority producers, not corporations", es: "Asegura que tu tierra pueda transferirse a productores prioritarios, no a corporaciones" },
+  taxSellLease: { en: "Tax credits for selling or leasing to priority producers", es: "Créditos fiscales por vender o arrendar a productores prioritarios" },
+  easements: { en: "Conservation easement enhancements may apply to your land", es: "Las mejoras de servidumbres de conservación pueden aplicarse a tu tierra" },
+  marketTransparency: { en: "Land market transparency helps you make informed decisions", es: "La transparencia del mercado de tierras te ayuda a tomar decisiones informadas" },
+  advocacyData: { en: "Public database provides data infrastructure for advocacy", es: "La base de datos pública proporciona infraestructura de datos para la incidencia" },
+  advocacyResearch: { en: "Publicly funded research strengthens policy arguments", es: "La investigación financiada públicamente fortalece los argumentos de política" },
+  advocacyMetrics: { en: "Standardized metrics enable program accountability", es: "Las métricas estandarizadas permiten la rendición de cuentas de programas" },
+  advocacyOffice: { en: "Expanded Farmer Equity Office creates institutional advocacy partner", es: "La Oficina de Equidad del Agricultor expandida crea un socio institucional de incidencia" },
+  indigenousSovereignty: { en: "Centers Indigenous land sovereignty and cultural practices", es: "Centra la soberanía indígena de tierras y prácticas culturales" },
+  tribalTaxExempt: { en: "Tribal property tax exemption during fee-to-trust", es: "Exención de impuesto predial tribal durante conversión a fideicomiso" },
+  blackSetAside: { en: "Includes set-aside for descendants of enslaved people", es: "Incluye reserva para descendientes de personas esclavizadas" },
+  blackHistory: { en: "Documents anti-Black land dispossession to support reparative action", es: "Documenta el despojo de tierras anti-negro para apoyar acciones reparativas" },
+  spanishServices: { en: "Multilingual services address Spanish-language access barriers", es: "Los servicios multilingües abordan las barreras de acceso en español" },
+  latinoTraining: { en: "Culturally appropriate training and equitable inspection scheduling", es: "Capacitación culturalmente apropiada y programación equitativa de inspecciones" },
+  alienLandLaws: { en: "Addresses legacy of Alien Land Laws and forced property loss", es: "Aborda el legado de las Leyes de Tierras para Extranjeros y la pérdida forzada de propiedades" },
+  asianServices: { en: "Multilingual services include Chinese and other Asian languages", es: "Los servicios multilingües incluyen chino y otros idiomas asiáticos" },
+  nhpiSetAside: { en: "Priority producer set-asides include Native Hawaiian/Pacific Islander communities", es: "Las reservas para productores prioritarios incluyen comunidades Nativas Hawaianas/Isleñas del Pacífico" },
+  bipocSetAsides: { en: "40% set-asides and BIPOC advisory committee recommendations", es: "Reservas del 40% y recomendaciones del comité asesor BIPOC" },
+  bipocAuthority: { en: "BIPOC and Small-Scale Producer Advisory Committees gain real authority", es: "Los Comités Asesores BIPOC y de Pequeños Productores obtienen autoridad real" },
+  affordDirect: { en: "Direct financial assistance for land purchase", es: "Asistencia financiera directa para compra de tierras" },
+  affordCompetition: { en: "Reduces investor competition that drives up prices", es: "Reduce la competencia de inversionistas que eleva los precios" },
+  leaseProtection: { en: "Bill of Rights protects against unfair lease terms and eviction", es: "La Carta de Derechos protege contra términos injustos de arrendamiento y desalojo" },
+  fairLeaseStandards: { en: "Model leases establish fair standards", es: "Los arrendamientos modelo establecen estándares justos" },
+  regCoordination: { en: "Tiered compliance, ombuds navigation, and interagency coordination", es: "Cumplimiento escalonado, navegación con defensores y coordinación interagencial" },
+  sgmaWater: { en: "SGMA reforms protect small operators from trading market power imbalances", es: "Las reformas SGMA protegen a pequeños operadores de desequilibrios de poder en el mercado de comercio" },
+  urbanWater: { en: "Water cost reduction and meter installation programs for urban growers", es: "Programas de reducción de costos de agua e instalación de medidores para cultivadores urbanos" },
+  diverseHousing: { en: "Allows diverse housing types on ag land including mobile homes, tiny homes, RVs", es: "Permite tipos diversos de vivienda en tierras agrícolas incluyendo casas móviles, casas pequeñas, RVs" },
+  pilotLending: { en: "Pilot lending programs designed for underserved borrowers", es: "Programas piloto de préstamos diseñados para prestatarios desatendidos" },
+  grantsBypass: { en: "Grants bypass need for credit entirely", es: "Las subvenciones evitan por completo la necesidad de crédito" },
+  multilingualTA: { en: "Multilingual, culturally appropriate technical assistance", es: "Asistencia técnica multilingüe y culturalmente apropiada" },
+  multilingualPest: { en: "Multilingual training for pest management and food safety", es: "Capacitación multilingüe para manejo de plagas y seguridad alimentaria" },
+  counterConsolidation: { en: "Entire section designed to counter consolidation forces", es: "Sección completa diseñada para contrarrestar las fuerzas de consolidación" },
+  successionReform: { en: "Succession tax reform prevents forced sales", es: "La reforma fiscal de sucesión previene ventas forzadas" },
+  retirementTransition: { en: "Retirement fund enables orderly transition", es: "El fondo de jubilación permite una transición ordenada" },
+  zoningReform: { en: "Model ordinances revise zoning for retail, processing, and housing on ag land", es: "Las ordenanzas modelo revisan la zonificación para comercio, procesamiento y vivienda en tierras agrícolas" },
+  culturalZoning: { en: "Cultural Conservation Zoning Overlays protect traditional land uses", es: "Las Zonas de Conservación Cultural protegen los usos tradicionales de la tierra" },
+  culturalFire: { en: "Removes barriers to cultural fire, traditional ecological knowledge", es: "Elimina barreras para quema cultural, conocimiento ecológico tradicional" },
+  conservationGuidelines: { en: "Updates conservation guidelines for Tribal uses and flexible agriculture", es: "Actualiza las directrices de conservación para usos tribales y agricultura flexible" },
+  urbanExclusion: { en: "Removes scale/acreage requirements that exclude urban growers", es: "Elimina requisitos de escala/superficie que excluyen a cultivadores urbanos" },
+  revisedEligibility: { en: "Revised eligibility criteria across existing programs", es: "Criterios de elegibilidad revisados en programas existentes" },
+  urbanPrograms: { en: "Urban-specific programs and land access", es: "Programas específicos urbanos y acceso a tierras" },
+  urbanEdgeZoning: { en: "Zoning reforms affect urban-edge agriculture", es: "Las reformas de zonificación afectan la agricultura en el borde urbano" },
+  tribalGovernance: { en: "Directly addresses Tribal land governance", es: "Aborda directamente la gobernanza tribal de tierras" },
+  ruralPreservation: { en: "Rural land preservation protects your agricultural area", es: "La preservación de tierras rurales protege tu área agrícola" },
+  ruralMonitoring: { en: "Monitoring and limits on investor purchases in rural areas", es: "Monitoreo y límites en compras de inversionistas en áreas rurales" },
+  periurbanBoundaries: { en: "Urban growth boundaries protect peri-urban farmland from development", es: "Los límites de crecimiento urbano protegen las tierras agrícolas periurbanas del desarrollo" },
+  periurbanPlan: { en: "Statewide preservation plan addresses peri-urban conversion", es: "El plan estatal de preservación aborda la conversión periurbana" },
+};
+
+/* ═══════════════ MATCHING ENGINE ═══════════════ */
+
+function matchRecommendations(profile) {
+  const { roles, identities, challenges, locations } = profile;
+  const scored = [];
+  SECTIONS.forEach(section => {
+    section.recs.forEach(rec => {
+      let score = 0; let reasons = [];
+      if (roles.includes("tribal_member")) {
+        if (["1.1","1.2","1.3","1.4"].includes(rec.id)) { score += 10; reasons.push(R.tribalDirect); }
+        if (["2.1","2.3","2.5","3.2"].includes(rec.id)) { score += 7; reasons.push(R.tribalFunding); }
+        if (["4.2","5.4"].includes(rec.id)) { score += 5; reasons.push(R.tribalGuidelines); }
+      }
+      if (roles.includes("current_farmer") || roles.includes("large_farmer")) {
+        if (["3.1","3.2","3.4"].includes(rec.id)) { score += 7; reasons.push(R.antiConsolidation); }
+        if (["5.1","5.2","5.3","5.4"].includes(rec.id)) { score += 8; reasons.push(R.tenureSecurity); }
+        if (["4.1","4.2","4.3"].includes(rec.id)) { score += 5; reasons.push(R.preservesLand); }
+      }
+      if (roles.includes("current_farmer")) {
+        if (["5.4"].includes(rec.id)) { score += 4; reasons.push(R.tieredCompliance); }
+        if (["2.6"].includes(rec.id)) { score += 5; reasons.push(R.setAsides); }
+      }
+      if (roles.includes("farmworker")) {
+        if (["2.7"].includes(rec.id)) { score += 9; reasons.push(R.farmworkerTransition); }
+        if (["5.5"].includes(rec.id)) { score += 8; reasons.push(R.farmworkerHousing); }
+        if (["5.4"].includes(rec.id)) { score += 6; reasons.push(R.oshaTraining); }
+        if (["2.1","2.4"].includes(rec.id)) { score += 7; reasons.push(R.grantsLoans); }
+        if (["2.2"].includes(rec.id)) { score += 4; reasons.push(R.laborExploitation); }
+      }
+      if (roles.includes("aspiring_farmer")) {
+        if (["2.1","2.3","2.4"].includes(rec.id)) { score += 10; reasons.push(R.directFunding); }
+        if (["2.7"].includes(rec.id)) { score += 8; reasons.push(R.techAssist); }
+        if (["3.2"].includes(rec.id)) { score += 8; reasons.push(R.firstPurchase); }
+        if (["4.4"].includes(rec.id)) { score += 7; reasons.push(R.publicLeasing); }
+        if (["2.5"].includes(rec.id)) { score += 6; reasons.push(R.taxCredits); }
+      }
+      if (roles.includes("urban_grower")) {
+        if (["6.1","6.2"].includes(rec.id)) { score += 10; reasons.push(R.urbanDirect); }
+        if (["2.6"].includes(rec.id)) { score += 5; reasons.push(R.urbanEligibility); }
+        if (["5.5"].includes(rec.id)) { score += 4; reasons.push(R.urbanZoning); }
+      }
+      if (roles.includes("tenant_farmer")) {
+        if (["5.1"].includes(rec.id)) { score += 10; reasons.push(R.billOfRights); }
+        if (["5.2","5.3"].includes(rec.id)) { score += 6; reasons.push(R.ombudsEquity); }
+        if (["4.4"].includes(rec.id)) { score += 7; reasons.push(R.modelLeases); }
+        if (["2.3"].includes(rec.id)) { score += 7; reasons.push(R.leaseToOwn); }
+      }
+      if (roles.includes("retiring_farmer")) {
+        if (["3.3"].includes(rec.id)) { score += 10; reasons.push(R.retirementFund); }
+        if (["2.5"].includes(rec.id)) { score += 7; reasons.push(R.successionTax); }
+        if (["3.2"].includes(rec.id)) { score += 5; reasons.push(R.priorityTransfer); }
+      }
+      if (roles.includes("landowner_nonfarm")) {
+        if (["2.5"].includes(rec.id)) { score += 8; reasons.push(R.taxSellLease); }
+        if (["4.2","4.3"].includes(rec.id)) { score += 5; reasons.push(R.easements); }
+        if (["3.4"].includes(rec.id)) { score += 4; reasons.push(R.marketTransparency); }
+      }
+      if (roles.includes("advocate")) {
+        if (["3.4"].includes(rec.id)) { score += 7; reasons.push(R.advocacyData); }
+        if (["2.2"].includes(rec.id)) { score += 7; reasons.push(R.advocacyResearch); }
+        if (["2.6"].includes(rec.id)) { score += 6; reasons.push(R.advocacyMetrics); }
+        if (["5.2"].includes(rec.id)) { score += 6; reasons.push(R.advocacyOffice); }
+      }
+      if (identities.includes("indigenous")) {
+        if (["1.1","1.2","1.3","1.4"].includes(rec.id)) { score += 8; reasons.push(R.indigenousSovereignty); }
+        if (["2.5"].includes(rec.id)) { score += 4; reasons.push(R.tribalTaxExempt); }
+      }
+      if (identities.includes("black")) {
+        if (["2.1"].includes(rec.id)) { score += 8; reasons.push(R.blackSetAside); }
+        if (["2.2"].includes(rec.id)) { score += 6; reasons.push(R.blackHistory); }
+      }
+      if (identities.includes("latino")) {
+        if (["2.7"].includes(rec.id)) { score += 5; reasons.push(R.spanishServices); }
+        if (["5.4"].includes(rec.id)) { score += 4; reasons.push(R.latinoTraining); }
+      }
+      if (identities.includes("asian")) {
+        if (["2.1","2.2"].includes(rec.id)) { score += 5; reasons.push(R.alienLandLaws); }
+        if (["2.7"].includes(rec.id)) { score += 4; reasons.push(R.asianServices); }
+      }
+      if (identities.includes("nhpi")) {
+        if (["2.1","2.6"].includes(rec.id)) { score += 5; reasons.push(R.nhpiSetAside); }
+      }
+      const isBIPOC = identities.some(id => ["indigenous","black","latino","asian","nhpi","multiracial"].includes(id));
+      if (isBIPOC) {
+        if (["2.6"].includes(rec.id)) { score += 3; reasons.push(R.bipocSetAsides); }
+        if (["5.2"].includes(rec.id)) { score += 3; reasons.push(R.bipocAuthority); }
+      }
+      if (challenges.includes("cant_afford")) {
+        if (["2.1","2.3","2.4"].includes(rec.id)) { score += 6; reasons.push(R.affordDirect); }
+        if (["3.1","3.2"].includes(rec.id)) { score += 4; reasons.push(R.affordCompetition); }
+      }
+      if (challenges.includes("insecure_lease")) {
+        if (["5.1"].includes(rec.id)) { score += 8; reasons.push(R.leaseProtection); }
+        if (["4.4"].includes(rec.id)) { score += 4; reasons.push(R.fairLeaseStandards); }
+      }
+      if (challenges.includes("regulatory_burden")) { if (["5.2","5.3","5.4"].includes(rec.id)) { score += 7; reasons.push(R.regCoordination); } }
+      if (challenges.includes("water_access")) {
+        if (["5.4"].includes(rec.id)) { score += 7; reasons.push(R.sgmaWater); }
+        if (["6.1"].includes(rec.id)) { score += 5; reasons.push(R.urbanWater); }
+      }
+      if (challenges.includes("no_housing")) { if (["5.5"].includes(rec.id)) { score += 9; reasons.push(R.diverseHousing); } }
+      if (challenges.includes("credit_denied")) {
+        if (["2.4"].includes(rec.id)) { score += 8; reasons.push(R.pilotLending); }
+        if (["2.1"].includes(rec.id)) { score += 5; reasons.push(R.grantsBypass); }
+      }
+      if (challenges.includes("language_barrier")) {
+        if (["2.7"].includes(rec.id)) { score += 8; reasons.push(R.multilingualTA); }
+        if (["5.4"].includes(rec.id)) { score += 4; reasons.push(R.multilingualPest); }
+      }
+      if (challenges.includes("consolidation_pressure")) { if (["3.1","3.2","3.3","3.4"].includes(rec.id)) { score += 7; reasons.push(R.counterConsolidation); } }
+      if (challenges.includes("succession")) {
+        if (["2.5"].includes(rec.id)) { score += 8; reasons.push(R.successionReform); }
+        if (["3.3"].includes(rec.id)) { score += 7; reasons.push(R.retirementTransition); }
+      }
+      if (challenges.includes("zoning")) {
+        if (["5.5"].includes(rec.id)) { score += 8; reasons.push(R.zoningReform); }
+        if (["1.4"].includes(rec.id)) { score += 4; reasons.push(R.culturalZoning); }
+      }
+      if (challenges.includes("cultural_practices")) {
+        if (["1.4"].includes(rec.id)) { score += 9; reasons.push(R.culturalFire); }
+        if (["4.2"].includes(rec.id)) { score += 4; reasons.push(R.conservationGuidelines); }
+      }
+      if (challenges.includes("urban_exclusion")) {
+        if (["6.1","6.2"].includes(rec.id)) { score += 9; reasons.push(R.urbanExclusion); }
+        if (["2.6"].includes(rec.id)) { score += 4; reasons.push(R.revisedEligibility); }
+      }
+      if (locations.includes("urban")) {
+        if (["6.1","6.2"].includes(rec.id)) { score += 5; reasons.push(R.urbanPrograms); }
+        if (["5.5"].includes(rec.id)) { score += 2; reasons.push(R.urbanEdgeZoning); }
+      }
+      if (locations.includes("tribal_land")) { if (["1.1","1.2","1.3","1.4"].includes(rec.id)) { score += 5; reasons.push(R.tribalGovernance); } }
+      if (locations.includes("rural")) {
+        if (["4.1","4.2","4.3"].includes(rec.id)) { score += 3; reasons.push(R.ruralPreservation); }
+        if (["3.1","3.4"].includes(rec.id)) { score += 3; reasons.push(R.ruralMonitoring); }
+      }
+      if (locations.includes("periurban")) {
+        if (["4.3"].includes(rec.id)) { score += 6; reasons.push(R.periurbanBoundaries); }
+        if (["4.1"].includes(rec.id)) { score += 3; reasons.push(R.periurbanPlan); }
+      }
+      const uniqueReasons = [...new Map(reasons.map(r => [r.en, r])).values()];
+      if (score > 0) scored.push({ rec, section, score, reasons: uniqueReasons });
+    });
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored;
+}
+
+/* ═══════════════ COMPONENTS ═══════════════ */
+
+function LangToggle({ lang, setLang }) {
+  return (
+    <button onClick={() => setLang(lang === "en" ? "es" : "en")} style={{
+      position: "fixed", top: "16px", right: "16px", zIndex: 100,
+      background: "linear-gradient(135deg, #2c1810, #4a3728)",
+      border: "2px solid rgba(232,169,82,0.4)", borderRadius: "30px",
+      padding: "8px 18px", cursor: "pointer",
+      display: "flex", alignItems: "center", gap: "8px",
+      boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
+      transition: "all 0.3s ease",
+    }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = "#E8A952"}
+      onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(232,169,82,0.4)"}
+    >
+      <span style={{ fontSize: "16px" }}>{lang === "en" ? "🇺🇸" : "🇲🇽"}</span>
+      <span style={{ color: "#E8A952", fontSize: "13px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px" }}>
+        {lang === "en" ? "ES" : "EN"}
+      </span>
+    </button>
+  );
+}
+
+function BarChart({ data }) {
+  const lang = useLang();
+  const maxPct = Math.max(...data.map(d => d.pct));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      {data.map((d, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ width: "200px", textAlign: "right", fontSize: "13px", fontFamily: "'Source Serif 4', Georgia, serif", color: "#4a3728", flexShrink: 0 }}>{t(d.group, lang)}</div>
+          <div style={{ flex: 1, background: "#e8ddd0", borderRadius: "4px", height: "28px", overflow: "hidden" }}>
+            <div style={{ width: `${(d.pct / maxPct) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${d.color}, ${d.color}cc)`, borderRadius: "4px", transition: "width 1.5s cubic-bezier(0.22, 1, 0.36, 1)", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "8px", minWidth: d.pct < 2 ? "50px" : undefined }}>
+              <span style={{ color: "#fff", fontSize: "12px", fontWeight: 700, textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}>{d.pct}%</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DonutChart() {
+  const lang = useLang();
+  const total = 26; let cumulative = 0; const radius = 80; const circumference = 2 * Math.PI * radius;
+  const sections = SECTIONS.map(s => ({ ...s, pct: (s.recCount / total) * 100 }));
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "24px", justifyContent: "center", flexWrap: "wrap" }}>
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        {sections.map((s, i) => { const dl = (s.pct / 100) * circumference; const doff = -(cumulative / 100) * circumference; cumulative += s.pct; return <circle key={i} cx="100" cy="100" r={radius} fill="none" stroke={s.color} strokeWidth="28" strokeDasharray={`${dl} ${circumference - dl}`} strokeDashoffset={doff} />; })}
+        <text x="100" y="95" textAnchor="middle" style={{ fontSize: "32px", fontWeight: 800, fill: "#2c1810", fontFamily: "'Source Serif 4', Georgia, serif" }}>26</text>
+        <text x="100" y="118" textAnchor="middle" style={{ fontSize: "12px", fill: "#7a6b5d", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(UI.totalRecs, lang)}</text>
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        {sections.map((s, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontFamily: "'Source Serif 4', Georgia, serif" }}><div style={{ width: "12px", height: "12px", borderRadius: "3px", background: s.color, flexShrink: 0 }} /><span style={{ color: "#4a3728" }}>{s.icon} {t(UI.sec, lang)} {s.id}: {s.recCount}</span></div>))}
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ section, onClick }) {
+  const lang = useLang();
+  return (
+    <div onClick={onClick} style={{ background: "#faf6f0", border: "2px solid #e8ddd0", borderRadius: "16px", padding: "24px", cursor: "pointer", transition: "all 0.4s cubic-bezier(0.22, 1, 0.36, 1)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.borderColor = section.color; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.borderColor = "#e8ddd0"; }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: `linear-gradient(135deg, ${section.color}, ${section.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", boxShadow: `0 4px 12px ${section.color}33` }}>{section.icon}</div>
+        <div>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: section.color, letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif" }}>{t(UI.section, lang)} {section.id}</div>
+          <div style={{ fontSize: "17px", fontWeight: 700, color: "#2c1810", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.3 }}>{t(section.title, lang)}</div>
+        </div>
+      </div>
+      <p style={{ fontSize: "14px", color: "#6b5b4d", lineHeight: 1.6, margin: 0, fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(section.summary, lang)}</p>
+      <div style={{ marginTop: "14px" }}>
+        <div style={{ background: `${section.color}18`, color: section.color, padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif", display: "inline-block" }}>{section.recCount} {section.recCount > 1 ? t(UI.recommendations, lang) : t(UI.recommendation, lang)}</div>
+      </div>
+    </div>
+  );
+}
+
+function RecDetail({ section }) {
+  const lang = useLang();
+  return (
+    <div style={{ background: "#faf6f0", border: "2px solid #e8ddd0", borderRadius: "16px", padding: "28px", animation: "fadeSlideIn 0.5s ease" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+        <span style={{ fontSize: "28px" }}>{section.icon}</span>
+        <h3 style={{ margin: 0, fontFamily: "'Source Serif 4', Georgia, serif", color: "#2c1810", fontSize: "22px" }}>{t(UI.section, lang)} {section.id}: {t(section.title, lang)}</h3>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "12px", margin: "20px 0" }}>
+        {section.keyStats.map((s, i) => (<div key={i} style={{ background: `linear-gradient(135deg, ${section.color}0a, ${section.accent}10)`, border: `1px solid ${section.color}20`, borderRadius: "12px", padding: "14px", textAlign: "center" }}><div style={{ fontSize: "22px", fontWeight: 800, color: section.color, fontFamily: "'DM Sans', sans-serif" }}>{s.value}</div><div style={{ fontSize: "11px", color: "#7a6b5d", marginTop: "4px", lineHeight: 1.3, fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(s.label, lang)}</div></div>))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {section.recs.map((r, i) => (
+          <div key={i} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: "12px", padding: "16px 20px", borderLeft: `4px solid ${section.color}`, transition: "transform 0.2s ease, box-shadow 0.2s ease" }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = `0 4px 16px ${section.color}15`; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateX(0)"; e.currentTarget.style.boxShadow = "none"; }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginBottom: "6px" }}>
+              <span style={{ background: `linear-gradient(135deg, ${section.color}, ${section.accent})`, color: "#fff", padding: "2px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>{r.id}</span>
+              <span style={{ fontWeight: 700, fontSize: "15px", color: "#2c1810", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(r.title, lang)}</span>
+            </div>
+            <p style={{ margin: 0, fontSize: "13px", color: "#6b5b4d", lineHeight: 1.6, fontFamily: "'Source Serif 4', Georgia, serif", paddingLeft: "46px" }}>{t(r.desc, lang)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TimelineItem({ year, text, side }) {
+  const lang = useLang();
+  return (
+    <div style={{ display: "flex", flexDirection: side === "left" ? "row" : "row-reverse", alignItems: "center", gap: "16px", width: "100%" }}>
+      <div style={{ flex: 1, textAlign: side === "left" ? "right" : "left", padding: "12px 16px", background: "#faf6f0", borderRadius: "10px", border: "1px solid #e8ddd0" }}>
+        <div style={{ fontWeight: 800, color: "#8B4513", fontSize: "14px", fontFamily: "'DM Sans', sans-serif" }}>{year}</div>
+        <div style={{ fontSize: "12px", color: "#6b5b4d", lineHeight: 1.5, fontFamily: "'Source Serif 4', Georgia, serif", marginTop: "2px" }}>{t(text, lang)}</div>
+      </div>
+      <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "linear-gradient(135deg, #8B4513, #D2691E)", border: "3px solid #faf6f0", boxShadow: "0 0 0 2px #8B4513", flexShrink: 0, zIndex: 1 }} />
+      <div style={{ flex: 1 }} />
+    </div>
+  );
+}
+
+function ChipSelect({ options, selected, onToggle }) {
+  const lang = useLang();
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "8px" }}>
+      {options.map(opt => {
+        const active = selected.includes(opt.id);
+        return (<button key={opt.id} onClick={() => onToggle(opt.id)} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px", border: active ? "2px solid #4A7C23" : "2px solid #e0d5c5", borderRadius: "12px", background: active ? "linear-gradient(135deg, #2D501608, #4A7C2310)" : "#faf6f0", cursor: "pointer", textAlign: "left", transition: "all 0.25s ease", fontFamily: "'Source Serif 4', Georgia, serif", fontSize: "14px", color: active ? "#2D5016" : "#5a4a3a", fontWeight: active ? 600 : 400, boxShadow: active ? "0 2px 12px rgba(45,80,22,0.12)" : "none" }}>
+          {opt.icon && <span style={{ fontSize: "18px", flexShrink: 0 }}>{opt.icon}</span>}
+          <span style={{ lineHeight: 1.3 }}>{t(opt.label, lang)}</span>
+          {active && <span style={{ marginLeft: "auto", color: "#4A7C23", fontSize: "16px", flexShrink: 0 }}>✓</span>}
+        </button>);
+      })}
+    </div>
+  );
+}
+
+function ImpactResults({ results }) {
+  const lang = useLang();
+  const topResults = results.slice(0, 12);
+  const sectionCounts = {}; topResults.forEach(r => { const sid = r.section.id; sectionCounts[sid] = (sectionCounts[sid] || 0) + 1; });
+  const topSection = SECTIONS.find(s => s.id === Number(Object.entries(sectionCounts).sort((a, b) => b[1] - a[1])[0]?.[0]));
+  const allMechanisms = []; topResults.forEach(r => { (t(r.rec.mechanisms, lang) || []).forEach(m => { if (!allMechanisms.includes(m)) allMechanisms.push(m); }); });
+  const maxScore = topResults[0]?.score || 1;
+  return (
+    <div style={{ animation: "fadeSlideIn 0.6s ease" }}>
+      <div style={{ background: "linear-gradient(135deg, #2c1810 0%, #4a3728 50%, #5C374C 100%)", borderRadius: "20px", padding: "32px", marginBottom: "24px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, opacity: 0.05, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 35px, #fff 35px, #fff 36px)" }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: "12px", color: "#E8A952", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "8px" }}>{t(UI.yourAssessment, lang)}</div>
+          <h3 style={{ color: "#faf6f0", fontSize: "24px", fontWeight: 800, margin: "0 0 16px", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.3 }}>{topResults.length} {t(UI.recsAffect, lang)}</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" }}>
+            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px", border: "1px solid rgba(255,255,255,0.08)" }}><div style={{ fontSize: "28px", fontWeight: 800, color: "#E8A952", fontFamily: "'DM Sans', sans-serif" }}>{topResults.filter(r => r.score >= maxScore * 0.7).length}</div><div style={{ fontSize: "12px", color: "#c9b99a" }}>{t(UI.highImpact, lang)}</div></div>
+            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px", border: "1px solid rgba(255,255,255,0.08)" }}><div style={{ fontSize: "28px", fontWeight: 800, color: "#83C5BE", fontFamily: "'DM Sans', sans-serif" }}>{allMechanisms.length}</div><div style={{ fontSize: "12px", color: "#c9b99a" }}>{t(UI.mechActivated, lang)}</div></div>
+            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px", border: "1px solid rgba(255,255,255,0.08)" }}><div style={{ fontSize: "28px", fontWeight: 800, color: "#9A5B7A", fontFamily: "'DM Sans', sans-serif" }}>{Object.keys(sectionCounts).length}</div><div style={{ fontSize: "12px", color: "#c9b99a" }}>{t(UI.sectionsRelevant, lang)}</div></div>
+          </div>
+        </div>
+      </div>
+      {topSection && (<div style={{ background: `linear-gradient(135deg, ${topSection.color}08, ${topSection.accent}12)`, border: `2px solid ${topSection.color}30`, borderRadius: "16px", padding: "20px", marginBottom: "24px", display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+        <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: `linear-gradient(135deg, ${topSection.color}, ${topSection.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", boxShadow: `0 4px 16px ${topSection.color}33`, flexShrink: 0 }}>{topSection.icon}</div>
+        <div style={{ flex: 1, minWidth: "200px" }}><div style={{ fontSize: "11px", fontWeight: 700, color: topSection.color, letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif" }}>{t(UI.mostRelevant, lang)}</div><div style={{ fontSize: "19px", fontWeight: 700, color: "#2c1810", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(UI.section, lang)} {topSection.id}: {t(topSection.title, lang)}</div></div>
+      </div>)}
+      <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#2c1810", margin: "0 0 4px", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(UI.rankedTitle, lang)}</h3>
+      <p style={{ fontSize: "13px", color: "#7a6b5d", margin: "0 0 16px", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(UI.rankedDesc, lang)}</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        {topResults.map((result, idx) => {
+          const { rec, section, score, reasons } = result;
+          const pct = Math.round((score / maxScore) * 100);
+          const tier = pct >= 70 ? "high" : pct >= 40 ? "medium" : "moderate";
+          const tierColors = { high: "#2D5016", medium: "#B5651D", moderate: "#7a6b5d" };
+          const tierLabels = { high: t(UI.highImpactLabel, lang), medium: t(UI.medImpactLabel, lang), moderate: t(UI.relevantLabel, lang) };
+          return (
+            <div key={rec.id} style={{ background: "#faf6f0", border: "2px solid #e8ddd0", borderRadius: "16px", padding: "20px 24px", borderLeft: `5px solid ${section.color}`, animation: `fadeSlideIn 0.5s ease ${idx * 0.06}s both` }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "12px", flexWrap: "wrap" }}>
+                <span style={{ background: `linear-gradient(135deg, ${section.color}, ${section.accent})`, color: "#fff", padding: "3px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>{rec.id}</span>
+                <div style={{ flex: 1, minWidth: "150px" }}><div style={{ fontWeight: 700, fontSize: "16px", color: "#2c1810", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.3 }}>{t(rec.title, lang)}</div><div style={{ fontSize: "12px", color: "#7a6b5d", fontFamily: "'DM Sans', sans-serif", marginTop: "2px" }}>{section.icon} {t(section.title, lang)}</div></div>
+                <div style={{ background: `${tierColors[tier]}14`, color: tierColors[tier], padding: "4px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif", flexShrink: 0, border: `1px solid ${tierColors[tier]}30` }}>{tierLabels[tier]}</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+                <div style={{ fontSize: "11px", color: "#7a6b5d", fontFamily: "'DM Sans', sans-serif", width: "70px", flexShrink: 0 }}>{t(UI.relevance, lang)}</div>
+                <div style={{ flex: 1, height: "8px", background: "#e8ddd0", borderRadius: "4px", overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${section.color}, ${section.accent})`, borderRadius: "4px", transition: "width 1s cubic-bezier(0.22, 1, 0.36, 1)" }} /></div>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: section.color, fontFamily: "'DM Sans', sans-serif", width: "36px", textAlign: "right" }}>{pct}%</div>
+              </div>
+              <div style={{ background: `linear-gradient(135deg, ${section.color}06, ${section.accent}08)`, borderRadius: "10px", padding: "14px 16px", marginBottom: "12px", border: `1px solid ${section.color}15` }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: section.color, letterSpacing: "1px", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif", marginBottom: "8px" }}>{t(UI.whyMatters, lang)}</div>
+                {reasons.map((reason, ri) => (<div key={ri} style={{ display: "flex", gap: "8px", alignItems: "flex-start", marginBottom: ri < reasons.length - 1 ? "6px" : 0 }}><span style={{ color: section.color, fontSize: "10px", marginTop: "5px", flexShrink: 0 }}>●</span><span style={{ fontSize: "13px", color: "#4a3728", lineHeight: 1.5, fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(reason, lang)}</span></div>))}
+              </div>
+              {rec.mechanisms && (<div><div style={{ fontSize: "11px", fontWeight: 700, color: "#7a6b5d", letterSpacing: "1px", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif", marginBottom: "8px" }}>{t(UI.mechLabel, lang)}</div><div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>{(t(rec.mechanisms, lang) || []).map((m, mi) => (<span key={mi} style={{ background: "#fff", border: "1px solid #e0d5c5", padding: "4px 10px", borderRadius: "8px", fontSize: "11px", color: "#5a4a3a", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.3 }}>⚙️ {m}</span>))}</div></div>)}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ background: "#faf6f0", border: "2px solid #e8ddd0", borderRadius: "16px", padding: "24px", marginTop: "24px" }}>
+        <h3 style={{ margin: "0 0 4px", fontSize: "18px", fontWeight: 700, color: "#2c1810", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(UI.fullMap, lang)}</h3>
+        <p style={{ fontSize: "13px", color: "#7a6b5d", margin: "0 0 16px" }}>{typeof UI.fullMapDesc[lang] === "function" ? UI.fullMapDesc[lang](allMechanisms.length) : ""}</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>{allMechanisms.map((m, i) => (<span key={i} style={{ background: "linear-gradient(135deg, #2D501608, #4A7C2310)", border: "1px solid #2D501625", padding: "6px 14px", borderRadius: "10px", fontSize: "12px", color: "#2D5016", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>⚙️ {m}</span>))}</div>
+      </div>
+    </div>
+  );
+}
+
+function PersonalImpactSection() {
+  const lang = useLang();
+  const [step, setStep] = useState(0);
+  const [profile, setProfile] = useState({ roles: [], identities: [], challenges: [], locations: [] });
+  const [results, setResults] = useState(null);
+  const toggle = (field, id) => setProfile(prev => ({ ...prev, [field]: prev[field].includes(id) ? prev[field].filter(x => x !== id) : [...prev[field], id] }));
+  const canProceed = () => { if (step === 0) return profile.roles.length > 0; if (step === 1) return profile.identities.length > 0; if (step === 2) return profile.challenges.length > 0; if (step === 3) return profile.locations.length > 0; return false; };
+  const handleAnalyze = () => { setResults(matchRecommendations(profile)); setStep(5); };
+  const steps = [
+    { title: UI.roleTitle, subtitle: UI.roleSubtitle, field: "roles", options: PROFILE_OPTIONS.role },
+    { title: UI.identityTitle, subtitle: UI.identitySubtitle, field: "identities", options: PROFILE_OPTIONS.identity },
+    { title: UI.challengeTitle, subtitle: UI.challengeSubtitle, field: "challenges", options: PROFILE_OPTIONS.challenges },
+    { title: UI.locationTitle, subtitle: UI.locationSubtitle, field: "locations", options: PROFILE_OPTIONS.location },
+  ];
+  const stepLabels = [UI.stepRole, UI.stepIdentity, UI.stepChallenges, UI.stepLocation];
+  if (step === 5 && results) return (
+    <div style={{ animation: "fadeIn 0.5s ease" }}>
+      <button onClick={() => { setStep(0); setResults(null); setProfile({ roles: [], identities: [], challenges: [], locations: [] }); }} style={{ background: "none", border: "1px solid #c9b99a", borderRadius: "10px", padding: "8px 18px", cursor: "pointer", fontSize: "13px", color: "#7a6b5d", fontFamily: "'DM Sans', sans-serif", marginBottom: "20px" }}>{t(UI.startOver, lang)}</button>
+      <ImpactResults results={results} />
+    </div>
+  );
+  const cur = steps[step] || steps[0];
+  return (
+    <div style={{ animation: "fadeIn 0.5s ease" }}>
+      <h2 style={{ fontSize: "26px", fontWeight: 800, color: "#2c1810", margin: "0 0 4px", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(UI.impactTitle, lang)}</h2>
+      <p style={{ fontSize: "14px", color: "#7a6b5d", marginBottom: "24px", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(UI.impactDesc, lang)}</p>
+      <div style={{ display: "flex", gap: "6px", marginBottom: "28px" }}>
+        {[0, 1, 2, 3].map(i => (<div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}><div style={{ height: "4px", borderRadius: "2px", background: i < step ? "linear-gradient(90deg, #2D5016, #4A7C23)" : i === step ? "linear-gradient(90deg, #8B4513, #D2691E)" : "#e0d5c5" }} /><div style={{ fontSize: "11px", fontFamily: "'DM Sans', sans-serif", color: i <= step ? "#2c1810" : "#b5a898", fontWeight: i === step ? 700 : 400 }}>{t(stepLabels[i], lang)}</div></div>))}
+      </div>
+      <div key={step} style={{ background: "#faf6f0", border: "2px solid #e8ddd0", borderRadius: "20px", padding: "28px", marginBottom: "20px", animation: "fadeSlideIn 0.4s ease" }}>
+        <h3 style={{ margin: "0 0 6px", fontSize: "20px", fontWeight: 700, color: "#2c1810", fontFamily: "'Source Serif 4', Georgia, serif" }}>{t(cur.title, lang)}</h3>
+        <p style={{ fontSize: "13px", color: "#7a6b5d", margin: "0 0 20px", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.5 }}>{t(cur.subtitle, lang)}</p>
+        <ChipSelect options={cur.options} selected={profile[cur.field]} onToggle={(id) => toggle(cur.field, id)} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
+        {step > 0 ? <button onClick={() => setStep(s => s - 1)} style={{ background: "none", border: "1px solid #c9b99a", borderRadius: "12px", padding: "12px 24px", cursor: "pointer", fontSize: "14px", color: "#5a4a3a", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>{t(UI.back, lang)}</button> : <div />}
+        {step < 3 ? <button onClick={() => canProceed() && setStep(s => s + 1)} style={{ background: canProceed() ? "linear-gradient(135deg, #2D5016, #4A7C23)" : "#d5ccc0", border: "none", borderRadius: "12px", padding: "12px 28px", cursor: canProceed() ? "pointer" : "not-allowed", fontSize: "14px", color: "#fff", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, boxShadow: canProceed() ? "0 4px 16px rgba(45,80,22,0.25)" : "none" }}>{t(UI.continue, lang)}</button>
+        : <button onClick={() => canProceed() && handleAnalyze()} style={{ background: canProceed() ? "linear-gradient(135deg, #8B4513, #D2691E)" : "#d5ccc0", border: "none", borderRadius: "12px", padding: "12px 28px", cursor: canProceed() ? "pointer" : "not-allowed", fontSize: "14px", color: "#fff", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, boxShadow: canProceed() ? "0 4px 16px rgba(139,69,19,0.3)" : "none" }}>{t(UI.analyze, lang)}</button>}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════ MAIN DASHBOARD ═══════════════ */
+
+function Dashboard() {
+  const [lang, setLang] = useState("en");
+  const [activeSection, setActiveSection] = useState(0);
+  const [tab, setTab] = useState("overview");
+  const TABS = [
+    { id: "overview", label: UI.tabOverview },
+    { id: "recommendations", label: UI.tabRecs },
+    { id: "data", label: UI.tabData },
+    { id: "timeline", label: UI.tabTimeline },
+    { id: "impact", label: UI.tabImpact },
+  ];
+  const heroStats = [
+    { value: "26", label: UI.stat1, icon: "📋" },
+    { value: "6", label: UI.stat2, icon: "🎯" },
+    { value: "13", label: UI.stat3, icon: "👥" },
+    { value: "207", label: UI.stat4, icon: "📊" },
+  ];
+  const commColors = ["#8B4513", "#5C374C", "#006D77", "#B5651D", "#9A5B7A", "#2D5016"];
+
+  return (
+    <LangContext.Provider value={lang}>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #f5efe6 0%, #faf6f0 30%, #f0e8db 100%)", fontFamily: "'Source Serif 4', Georgia, serif" }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;0,8..60,800;1,8..60,400&family=DM+Sans:wght@400;500;700&display=swap');
+          @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+          * { box-sizing: border-box; }
+          ::-webkit-scrollbar { width: 6px; }
+          ::-webkit-scrollbar-track { background: transparent; }
+          ::-webkit-scrollbar-thumb { background: #c9b99a; border-radius: 3px; }
+        `}</style>
+
+        <LangToggle lang={lang} setLang={setLang} />
+
+        {/* Hero */}
+        <div style={{ background: "linear-gradient(135deg, #2c1810 0%, #4a3728 40%, #5C374C 100%)", padding: "48px 24px 40px", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", inset: 0, opacity: 0.06, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 35px, #fff 35px, #fff 36px)" }} />
+          <div style={{ maxWidth: "1000px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+            <div style={{ display: "inline-block", background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)", padding: "6px 16px", borderRadius: "20px", fontSize: "12px", color: "#e8ddd0", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, letterSpacing: "1px", marginBottom: "16px", border: "1px solid rgba(255,255,255,0.1)" }}>{t(UI.heroTag, lang)}</div>
+            <h1 style={{ fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 800, color: "#faf6f0", margin: "0 0 12px", lineHeight: 1.15, animation: "slideUp 0.8s ease" }}>
+              {t(UI.heroTitle1, lang)}<br /><span style={{ color: "#E8A952" }}>{t(UI.heroTitle2, lang)}</span>
+            </h1>
+            <p style={{ fontSize: "16px", color: "#c9b99a", maxWidth: "600px", lineHeight: 1.6, margin: "0 0 28px", animation: "slideUp 0.8s ease 0.15s both" }}>{t(UI.heroDesc, lang)}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", animation: "slideUp 0.8s ease 0.3s both" }}>
+              {heroStats.map((s, i) => (<div key={i} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(10px)", borderRadius: "14px", padding: "16px", border: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}><div style={{ fontSize: "24px", marginBottom: "4px" }}>{s.icon}</div><div style={{ fontSize: "28px", fontWeight: 800, color: "#faf6f0", fontFamily: "'DM Sans', sans-serif" }}>{s.value}</div><div style={{ fontSize: "11px", color: "#c9b99a", letterSpacing: "0.5px" }}>{t(s.label, lang)}</div></div>))}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "0 24px", position: "sticky", top: 0, zIndex: 10, background: "linear-gradient(180deg, #f5efe6 80%, transparent)", paddingTop: "16px", paddingBottom: "8px" }}>
+          <div style={{ display: "flex", gap: "4px", background: "#e8ddd0", borderRadius: "12px", padding: "4px", overflowX: "auto" }}>
+            {TABS.map(tb => (<button key={tb.id} onClick={() => setTab(tb.id)} style={{ flex: 1, padding: "10px 14px", border: "none", borderRadius: "9px", background: tab === tb.id ? (tb.id === "impact" ? "linear-gradient(135deg, #8B4513, #D2691E)" : "#faf6f0") : "transparent", color: tab === tb.id ? (tb.id === "impact" ? "#fff" : "#2c1810") : "#7a6b5d", fontWeight: tab === tb.id ? 700 : 500, fontSize: "13px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.3s ease", boxShadow: tab === tb.id ? "0 2px 8px rgba(0,0,0,0.08)" : "none", whiteSpace: "nowrap" }}>{t(tb.label, lang)}</button>))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "24px 24px 60px" }}>
+
+          {tab === "overview" && (<div style={{ animation: "fadeIn 0.5s ease" }}>
+            <h2 style={{ fontSize: "26px", fontWeight: 800, color: "#2c1810", margin: "0 0 8px" }}>{t(UI.overviewTitle, lang)}</h2>
+            <p style={{ fontSize: "15px", color: "#6b5b4d", lineHeight: 1.7, marginBottom: "24px" }} dangerouslySetInnerHTML={{ __html: t(UI.overviewDesc, lang).replace(t(UI.priorityProducers, lang), `<strong style="color:#2c1810">${t(UI.priorityProducers, lang)}</strong>`) }} />
+            <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#2c1810", margin: "24px 0 16px" }}>{t(UI.recsBySection, lang)}</h3>
+            <DonutChart />
+            <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#2c1810", margin: "32px 0 16px" }}>{t(UI.sixAreas, lang)}</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" }}>
+              {SECTIONS.map((s, i) => (<SectionCard key={s.id} section={s} onClick={() => { setActiveSection(i); setTab("recommendations"); }} />))}
+            </div>
+          </div>)}
+
+          {tab === "recommendations" && (<div style={{ animation: "fadeIn 0.5s ease" }}>
+            <h2 style={{ fontSize: "26px", fontWeight: 800, color: "#2c1810", margin: "0 0 4px" }}>{t(UI.all26, lang)}</h2>
+            <p style={{ fontSize: "14px", color: "#7a6b5d", marginBottom: "20px" }}>{t(UI.selectSection, lang)}</p>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
+              {SECTIONS.map((s, i) => (<button key={s.id} onClick={() => setActiveSection(i)} style={{ padding: "8px 16px", border: activeSection === i ? `2px solid ${s.color}` : "2px solid #e8ddd0", borderRadius: "10px", background: activeSection === i ? `${s.color}12` : "#faf6f0", cursor: "pointer", fontSize: "13px", fontFamily: "'DM Sans', sans-serif", fontWeight: activeSection === i ? 700 : 500, color: activeSection === i ? s.color : "#7a6b5d", transition: "all 0.3s ease", display: "flex", alignItems: "center", gap: "6px" }}>{s.icon} {s.id}. {t(s.title, lang)}</button>))}
+            </div>
+            <RecDetail section={SECTIONS[activeSection]} />
+          </div>)}
+
+          {tab === "data" && (<div style={{ animation: "fadeIn 0.5s ease" }}>
+            <h2 style={{ fontSize: "26px", fontWeight: 800, color: "#2c1810", margin: "0 0 4px" }}>{t(UI.dataTitle, lang)}</h2>
+            <p style={{ fontSize: "14px", color: "#7a6b5d", marginBottom: "24px" }}>{t(UI.dataDesc, lang)}</p>
+            <div style={{ background: "#faf6f0", border: "2px solid #e8ddd0", borderRadius: "16px", padding: "28px", marginBottom: "20px" }}>
+              <h3 style={{ margin: "0 0 4px", fontSize: "18px", color: "#2c1810" }}>{t(UI.ownershipTitle, lang)}</h3>
+              <p style={{ fontSize: "12px", color: "#7a6b5d", margin: "0 0 20px" }}>{t(UI.ownershipDesc, lang)}</p>
+              <BarChart data={OWNERSHIP_DATA} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+              {DATA_STATS.map((s, i) => (<div key={i} style={{ background: "#faf6f0", border: "2px solid #e8ddd0", borderRadius: "14px", padding: "20px", textAlign: "center", transition: "transform 0.2s ease" }} onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"} onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}><div style={{ fontSize: "32px", fontWeight: 800, color: s.color, fontFamily: "'DM Sans', sans-serif" }}>{s.value}</div><div style={{ fontSize: "12px", color: "#6b5b4d", marginTop: "6px", lineHeight: 1.4 }}>{t(s.label, lang)}</div></div>))}
+            </div>
+            <div style={{ background: "linear-gradient(135deg, #2c1810, #4a3728)", borderRadius: "16px", padding: "28px", color: "#faf6f0" }}>
+              <h3 style={{ margin: "0 0 16px", fontSize: "18px", color: "#E8A952" }}>{t(UI.consolidationTitle, lang)}</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                <div>
+                  <div style={{ fontSize: "11px", color: "#c9b99a", textTransform: "uppercase", letterSpacing: "1px", fontFamily: "'DM Sans', sans-serif", marginBottom: "8px" }}>{t(UI.smallOwners, lang)}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}><span style={{ fontSize: "36px", fontWeight: 800, color: "#E8A952", fontFamily: "'DM Sans', sans-serif" }}>63.5%</span><span style={{ fontSize: "13px", color: "#c9b99a" }}>{t(UI.ofLandowners, lang)}</span></div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "4px" }}><span style={{ fontSize: "36px", fontWeight: 800, color: "#83C5BE", fontFamily: "'DM Sans', sans-serif" }}>9.9%</span><span style={{ fontSize: "13px", color: "#c9b99a" }}>{t(UI.ofCropland, lang)}</span></div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "11px", color: "#c9b99a", textTransform: "uppercase", letterSpacing: "1px", fontFamily: "'DM Sans', sans-serif", marginBottom: "8px" }}>{t(UI.largeOwners, lang)}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}><span style={{ fontSize: "36px", fontWeight: 800, color: "#E8A952", fontFamily: "'DM Sans', sans-serif" }}>4.6%</span><span style={{ fontSize: "13px", color: "#c9b99a" }}>{t(UI.ofLandowners, lang)}</span></div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "4px" }}><span style={{ fontSize: "36px", fontWeight: 800, color: "#83C5BE", fontFamily: "'DM Sans', sans-serif" }}>48.9%</span><span style={{ fontSize: "13px", color: "#c9b99a" }}>{t(UI.ofCropland, lang)}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>)}
+
+          {tab === "timeline" && (<div style={{ animation: "fadeIn 0.5s ease" }}>
+            <h2 style={{ fontSize: "26px", fontWeight: 800, color: "#2c1810", margin: "0 0 4px" }}>{t(UI.historyTitle, lang)}</h2>
+            <p style={{ fontSize: "14px", color: "#7a6b5d", marginBottom: "28px" }}>{t(UI.historyDesc, lang)}</p>
+            <div style={{ position: "relative", maxWidth: "700px", margin: "0 auto" }}>
+              <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: "2px", background: "linear-gradient(180deg, #8B4513, #D2691E, #E8A952)", transform: "translateX(-50%)" }} />
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {TIMELINE.map((e, i) => <TimelineItem key={i} year={e.year} text={e.text} side={i % 2 === 0 ? "left" : "right"} />)}
+              </div>
+            </div>
+            <div style={{ marginTop: "36px", background: "#faf6f0", border: "2px solid #e8ddd0", borderRadius: "16px", padding: "24px" }}>
+              <h3 style={{ margin: "0 0 12px", fontSize: "18px", color: "#2c1810" }}>{t(UI.commAffected, lang)}</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
+                {COMMUNITIES.map((c, i) => (<div key={i} style={{ padding: "16px", background: "#fff", border: "1px solid #e8ddd0", borderRadius: "12px", borderTop: `3px solid ${commColors[i]}` }}><div style={{ fontWeight: 700, fontSize: "14px", color: "#2c1810", marginBottom: "6px" }}>{t(c.group, lang)}</div><div style={{ fontSize: "12px", color: "#6b5b4d", lineHeight: 1.5 }}>{t(c.impact, lang)}</div></div>))}
+              </div>
+            </div>
+          </div>)}
+
+          {tab === "impact" && <PersonalImpactSection />}
+        </div>
+
+        <div style={{ background: "#2c1810", padding: "20px 24px", textAlign: "center", fontSize: "12px", color: "#7a6b5d", fontFamily: "'DM Sans', sans-serif" }}>{t(UI.footer, lang)}</div>
+      </div>
+    </LangContext.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Dashboard />);
+</script>
+</body>
+</html>
