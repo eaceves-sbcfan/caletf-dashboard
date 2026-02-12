@@ -129,6 +129,7 @@ const UI = {
     en: "California Agricultural Land Equity Task Force Report Dashboard · Created from AB 179 (2022) · Recommendations due January 1, 2026",
     es: "Panel del Informe del Grupo de Trabajo de Equidad en Tierras Agrícolas de California · Creado a partir de AB 179 (2022) · Recomendaciones entregadas el 1 de enero de 2026"
   },
+  readReport: { en: "Read Full Report (PDF)", es: "Leer Informe Completo (PDF)" },
   sec: { en: "Sec", es: "Sec" },
   priorityProducers: { en: "priority producers and Tribal land stewards", es: "productores prioritarios y administradores tribales de tierras" },
 };
@@ -860,7 +861,8 @@ function Dashboard() {
             <h1 style={{ fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 800, color: "#faf6f0", margin: "0 0 12px", lineHeight: 1.15, animation: "slideUp 0.8s ease" }}>
               {t(UI.heroTitle1, lang)}<br /><span style={{ color: "#E8A952" }}>{t(UI.heroTitle2, lang)}</span>
             </h1>
-            <p style={{ fontSize: "16px", color: "#c9b99a", maxWidth: "600px", lineHeight: 1.6, margin: "0 0 28px", animation: "slideUp 0.8s ease 0.15s both" }}>{t(UI.heroDesc, lang)}</p>
+            <p style={{ fontSize: "16px", color: "#c9b99a", maxWidth: "600px", lineHeight: 1.6, margin: "0 0 20px", animation: "slideUp 0.8s ease 0.15s both" }}>{t(UI.heroDesc, lang)}</p>
+            <a href="https://sgc.ca.gov/wp-content/uploads/ALETF-Final-Report_Dec-11-2025.pdf" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "linear-gradient(135deg, #E8A952, #D2691E)", color: "#2c1810", padding: "10px 22px", borderRadius: "30px", fontSize: "14px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif", textDecoration: "none", boxShadow: "0 4px 16px rgba(232,169,82,0.3)", transition: "all 0.3s ease", marginBottom: "28px", animation: "slideUp 0.8s ease 0.2s both" }} onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 24px rgba(232,169,82,0.4)"; }} onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(232,169,82,0.3)"; }}>📄 {t(UI.readReport, lang)} ↗</a>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", animation: "slideUp 0.8s ease 0.3s both" }}>
               {heroStats.map((s, i) => (<div key={i} style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(10px)", borderRadius: "14px", padding: "16px", border: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}><div style={{ fontSize: "24px", marginBottom: "4px" }}>{s.icon}</div><div style={{ fontSize: "28px", fontWeight: 800, color: "#faf6f0", fontFamily: "'DM Sans', sans-serif" }}>{s.value}</div><div style={{ fontSize: "11px", color: "#c9b99a", letterSpacing: "0.5px" }}>{t(s.label, lang)}</div></div>))}
             </div>
@@ -945,7 +947,10 @@ function Dashboard() {
           {tab === "impact" && <PersonalImpactSection />}
         </div>
 
-        <div style={{ background: "#2c1810", padding: "20px 24px", textAlign: "center", fontSize: "12px", color: "#7a6b5d", fontFamily: "'DM Sans', sans-serif" }}>{t(UI.footer, lang)}</div>
+        <div style={{ background: "#2c1810", padding: "20px 24px", textAlign: "center", fontSize: "12px", color: "#7a6b5d", fontFamily: "'DM Sans', sans-serif" }}>
+          <div>{t(UI.footer, lang)}</div>
+          <a href="https://sgc.ca.gov/wp-content/uploads/ALETF-Final-Report_Dec-11-2025.pdf" target="_blank" rel="noopener noreferrer" style={{ color: "#E8A952", textDecoration: "none", fontSize: "12px", marginTop: "6px", display: "inline-block" }}>📄 {t(UI.readReport, lang)} ↗</a>
+        </div>
       </div>
     </LangContext.Provider>
   );
